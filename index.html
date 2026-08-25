@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="id" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ATM 129</title>
+    
+    <!-- Google Fonts: Quicksand for a Playful & Modern Look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Custom Stylesheet (Semua CSS ada di sini) -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- HEADER PREMIUM BANKING -->
+    <nav class="navbar navbar-expand navbar-premium shadow-sm fixed-top">
+        <div class="container-fluid px-2 px-md-3">
+            
+            <!-- Branding Premium -->
+            <a class="navbar-brand text-white fw-bold d-flex align-items-center gap-2" href="#">
+                <div class="rounded p-1 d-flex align-items-center justify-content-center shadow-sm border border-light border-opacity-25" style="width: 32px; height: 32px; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                    <i class="bi bi-shield-lock-fill text-white fs-6"></i>
+                </div>
+                <span class="pt-1 navbar-brand-text" style="font-size: 1.15rem;">129<span class="brand-light">ATM</span></span>
+            </a>
+            
+            <!-- Area Kontrol (Dioptimalkan untuk HP) -->
+            <div class="d-flex gap-2 align-items-center header-controls">
+                
+                <!-- MESIN WAKTU (PEMILIH BULAN) -->
+                <div class="d-flex align-items-center bg-white rounded-pill px-3 py-1 shadow-sm border border-light month-picker-container">
+                    <!-- Ikon ini disembunyikan di HP sangat kecil agar hemat ruang -->
+                    <i class="bi bi-calendar2-week-fill text-primary me-2 d-none d-sm-block"></i>
+                    <input type="month" id="globalPeriod" class="form-control form-control-sm border-0 bg-transparent fw-bolder text-dark p-0 month-picker-input" style="width: 115px; cursor: pointer; outline: none; box-shadow: none;" onchange="superApp.changePeriod()" title="Pilih Bulan Rekonsiliasi">
+                </div>
+                
+                <!-- Garis Pembatas (Hanya tampil di PC/Tablet) -->
+                <div class="vr bg-white opacity-25 mx-1 d-none d-sm-block" style="width: 2px;"></div>
+
+                <!-- Tombol Pengaturan -->
+                <button class="btn premium-btn btn-sm rounded-circle shadow-sm bouncy-hover d-flex align-items-center justify-content-center" onclick="new bootstrap.Modal(document.getElementById('modal-system-settings')).show()" style="width: 34px; height: 34px;" title="Pengaturan Sistem">
+                    <i class="bi bi-gear-fill"></i>
+                </button>
+                
+                <!-- Tombol Tema (Tidak akan terlempar lagi) -->
+                <button class="btn premium-btn btn-sm rounded-circle shadow-sm bouncy-hover d-flex align-items-center justify-content-center" id="themeToggle" style="width: 34px; height: 34px;" title="Ganti Tema">
+                    <i class="bi bi-moon-stars-fill"></i>
+                </button>
+                
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid main-wrapper mt-5 pt-3">
+        <div class="row">
+         <!-- DESKTOP SIDEBAR THE BIG 5 (ANTI-HASH FIX) -->
+            <nav class="col-md-3 col-lg-2 d-none d-md-block sidebar shadow-sm h-100 position-fixed bg-white border-end">
+                <div class="pt-4">
+                    <ul class="nav flex-column gap-2 p-3">
+                        <li class="nav-item">
+                            <!-- Ganti href="#" menjadi href="javascript:void(0)" -->
+                            <a class="nav-link active menu-btn py-2 d-flex justify-content-between align-items-center rounded-3 transition-all" href="javascript:void(0)" onclick="showPage('dashboard')">
+                                <span><i class="bi bi-grid-1x2-fill me-2 text-primary"></i> Dasbor Utama</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link menu-btn py-2 text-secondary d-flex justify-content-between align-items-center rounded-3 transition-all" href="javascript:void(0)" onclick="showPage('opname')">
+                                <span><i class="bi bi-safe me-2 text-danger"></i> Opname ATM</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link menu-btn py-2 text-secondary d-flex justify-content-between align-items-center rounded-3 transition-all" href="javascript:void(0)" onclick="showPage('pusatdata')">
+                                <span><i class="bi bi-server me-2 text-info"></i> Pusat Data</span>
+                                <span class="badge bg-warning text-dark rounded-pill shadow-sm d-none pulse-animation" id="navBadgeUpload"><i class="bi bi-exclamation-circle-fill"></i></span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link menu-btn py-2 text-secondary d-flex justify-content-between align-items-center rounded-3 transition-all" href="javascript:void(0)" onclick="showPage('analisa')">
+                                <span><i class="bi bi-search me-2 text-warning"></i> Analisa AI</span>
+                                <span class="badge bg-danger rounded-pill shadow-sm d-none" id="navBadgeAnalisa">0</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link menu-btn py-2 text-secondary d-flex justify-content-between align-items-center rounded-3 transition-all" href="javascript:void(0)" onclick="showPage('arsip'); superApp.fetchUniversalData();">
+                                <span><i class="bi bi-archive-fill me-2 text-dark"></i> Arsip Universal</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 pb-5 mb-5 main-content">
+                
+                <datalist id="dl-atm"></datalist>
+                <datalist id="dl-resi"></datalist>
+                <datalist id="dl-nominal"></datalist>
+
+                <!-- ========================================== -->
+                <!-- 1. DASBOR UTAMA (OVERVIEW + KALENDER)      -->
+                <!-- ========================================== -->
+                <div id="dashboard" class="page-section fade-in">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4 mt-2 border-bottom pb-3">
+                        <div>
+                            <h4 class="fw-black mb-0 text-dark d-flex align-items-center">
+                                <i class="bi bi-grid-1x2-fill text-primary me-2 pulse-animation"></i> Dasbor Rekonsiliasi
+                            </h4>
+                            <p class="text-muted small fw-medium mb-0 mt-1" id="dashBulan">Periode Aktif: ...</p>
+                        </div>
+                    </div>
+
+                    <!-- Switch Tabs Dasbor -->
+                    <ul class="nav nav-pills bg-light p-1 rounded-pill shadow-sm mb-4 border d-flex flex-nowrap overflow-auto hide-scrollbar" role="tablist">
+                        <li class="nav-item flex-fill" role="presentation">
+                            <button class="nav-link active w-100 rounded-pill fw-bold py-2 text-nowrap transition-all" id="tab-dash-overview" data-bs-toggle="pill" data-bs-target="#dash-overview" type="button" style="font-size: 0.85rem;">
+                                <i class="bi bi-pie-chart-fill text-primary me-1"></i> Ringkasan Eksekutif
+                            </button>
+                        </li>
+                        <li class="nav-item flex-fill" role="presentation">
+                            <button class="nav-link w-100 rounded-pill fw-bold py-2 text-nowrap transition-all" id="tab-dash-calendar" data-bs-toggle="pill" data-bs-target="#dash-calendar" type="button" style="font-size: 0.85rem;">
+                                <i class="bi bi-calendar-range-fill text-info me-1"></i> Kalender Pintar
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- TAB 1: OVERVIEW WIDGETS -->
+                        <div class="tab-pane fade show active" id="dash-overview" role="tabpanel">
+                            <div class="data-completeness-banner"></div>
+                            <!-- 4 Grid Cards Widget -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-6 col-md-3">
+                                    <div class="card border-0 bg-primary text-white shadow-sm rounded-4 h-100 p-3 bouncy-hover" style="cursor: pointer;" onclick="showPage('pusatdata'); document.getElementById('tab-data-master').click();">
+                                        <div class="d-flex justify-content-between"><i class="bi bi-database-fill fs-2 opacity-50"></i><h3 class="fw-black mb-0" id="dashTotalTrx">0</h3></div>
+                                        <p class="small fw-bold mb-0 mt-2">Total Transaksi</p>
+                                        <small class="opacity-75 fw-medium" style="font-size:0.65rem" id="dashSubTrx">GL: 0 | EJ: 0</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="card border-0 bg-danger text-white shadow-sm rounded-4 h-100 p-3 bouncy-hover" style="cursor: pointer;" onclick="showPage('analisa')">
+                                        <div class="d-flex justify-content-between"><i class="bi bi-exclamation-triangle-fill fs-2 opacity-50"></i><h3 class="fw-black mb-0" id="dashTotalGantung">0</h3></div>
+                                        <p class="small fw-bold mb-0 mt-2">Kasus Gantung</p>
+                                        <small class="opacity-75 fw-medium" style="font-size:0.65rem" id="dashSubGantung">Lebih: 0 | Kurang: 0</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="card border-0 bg-success text-white shadow-sm rounded-4 h-100 p-3 bouncy-hover" style="cursor: pointer;" onclick="showPage('analisa')">
+                                        <div class="d-flex justify-content-between"><i class="bi bi-check-circle-fill fs-2 opacity-50"></i><h3 class="fw-black mb-0" id="dashTotalSelesai">0</h3></div>
+                                        <p class="small fw-bold mb-0 mt-2">Kasus Diselesaikan</p>
+                                        <small class="opacity-75 fw-medium" style="font-size:0.65rem" id="dashSubSelesai">Bulan Ini</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="card border-0 bg-warning text-dark shadow-sm rounded-4 h-100 p-3 bouncy-hover" style="cursor: pointer;" onclick="showPage('opname'); document.getElementById('tab-op-riwayat').click();">
+                                        <div class="d-flex justify-content-between"><i class="bi bi-safe-fill fs-2 opacity-50"></i><h3 class="fw-black mb-0" id="dashTotalOpname">0</h3></div>
+                                        <p class="small fw-bold mb-0 mt-2">Riwayat Opname</p>
+                                        <small class="opacity-75 fw-medium" style="font-size:0.65rem" id="dashSubOpname">Semua Waktu</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Grafik & Saran AI -->
+                            <div class="row g-3">
+                                <div class="col-md-7">
+                                    <div class="card bg-white border-0 shadow-sm rounded-4 p-4 h-100 bouncy-hover">
+                                        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-graph-up-arrow text-primary"></i> Kesehatan Rekonsiliasi (Bulan Ini)</h6>
+                                        <div class="d-flex justify-content-between small fw-bold text-muted mb-1">
+                                            <span>Tingkat Resolusi / Penyelesaian</span><span id="dashRateTxt" class="text-primary">0%</span>
+                                        </div>
+                                        <div class="progress rounded-pill bg-light mb-4 shadow-inner" style="height: 12px;">
+                                            <div id="dashRateBar" class="progress-bar bg-primary progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+                                        </div>
+                                        <div class="row text-center mt-3 g-2">
+                                            <div class="col-4 border-end">
+                                                <span class="d-block small text-muted fw-bold" style="font-size:0.65rem">POTENSI UANG SISA</span>
+                                                <span class="fw-black text-success" id="dashNomLebih">Rp 0</span>
+                                            </div>
+                                            <div class="col-4 border-end">
+                                                <span class="d-block small text-muted fw-bold" style="font-size:0.65rem">POTENSI UANG HILANG</span>
+                                                <span class="fw-black text-danger" id="dashNomKurang">Rp 0</span>
+                                            </div>
+                                            <div class="col-4">
+                                                <span class="d-block small text-muted fw-bold" style="font-size:0.65rem">TELAH DITUTUP</span>
+                                                <span class="fw-black text-dark" id="dashNomSelesai">Rp 0</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <div class="card bg-dark text-white border-0 shadow-sm rounded-4 p-4 h-100 position-relative overflow-hidden bouncy-hover">
+                                        <i class="bi bi-robot position-absolute top-0 end-0 opacity-25" style="font-size: 8rem; margin-top: -20px; margin-right: -10px;"></i>
+                                        <h6 class="fw-bold text-warning mb-2 position-relative z-1"><i class="bi bi-magic"></i> AI Assistant</h6>
+                                        <p class="small text-light mb-3 position-relative z-1" id="dashAiText">Mengumpulkan intelijen data dari seluruh dimensi waktu...</p>
+                                        <button class="btn btn-light btn-sm rounded-pill fw-bold text-dark w-100 position-relative z-1 mt-auto shadow-sm" onclick="document.getElementById('tab-dash-calendar').click();">
+                                            <i class="bi bi-calendar-event-fill text-primary"></i> Buka Kalender Pantauan
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: KALENDER PINTAR -->
+                        <div class="tab-pane fade" id="dash-calendar" role="tabpanel">
+                            <div class="card bg-white border border-light shadow-sm rounded-4 p-4 overflow-hidden position-relative">
+                                <i class="bi bi-calendar-check position-absolute top-0 end-0 opacity-10" style="font-size: 15rem; margin-top: -50px; margin-right: -40px; pointer-events: none;"></i>
+                                <div class="position-relative z-1">
+                                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-center mb-4 gap-3 bg-light p-3 rounded-4 border border-secondary-subtle shadow-inner">
+                                        <div class="d-flex align-items-center gap-3 bg-white p-2 rounded-pill shadow-sm border">
+                                            <button class="btn btn-sm btn-light rounded-circle bouncy-hover d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="geserBulan(-1)" title="Bulan Sebelumnya"><i class="bi bi-chevron-left text-primary fw-bold"></i></button>
+                                            <h5 class="fw-black text-primary mb-0 text-uppercase text-center" id="calendarMonthLabel" style="letter-spacing: 1px; min-width: 140px;">Bulan...</h5>
+                                            <button class="btn btn-sm btn-light rounded-circle bouncy-hover d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="geserBulan(1)" title="Bulan Selanjutnya"><i class="bi bi-chevron-right text-primary fw-bold"></i></button>
+                                        </div>
+                                        <div class="d-flex flex-wrap justify-content-center gap-2">
+                                            <span class="badge bg-white border border-primary-subtle text-primary shadow-sm px-3 py-2 rounded-pill fw-bold"><i class="bi bi-cloud-arrow-down-fill me-1"></i> GL Masuk</span>
+                                            <span class="badge bg-white border border-success-subtle text-success shadow-sm px-3 py-2 rounded-pill fw-bold"><i class="bi bi-receipt me-1"></i> EJ Masuk</span>
+                                            <span class="badge bg-danger text-white shadow-sm px-3 py-2 rounded-pill fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Ada Selisih</span>
+                                            <span class="badge bg-info text-dark shadow-sm px-3 py-2 rounded-pill fw-bold"><i class="bi bi-shield-fill-check me-1"></i> Aman (Klop)</span>
+                                        </div>
+                                    </div>
+                                    <div class="calendar-grid mb-2 px-1">
+                                        <div class="calendar-day-header text-danger">MGG</div><div class="calendar-day-header">SEN</div><div class="calendar-day-header">SEL</div><div class="calendar-day-header">RAB</div><div class="calendar-day-header">KAM</div><div class="calendar-day-header">JUM</div><div class="calendar-day-header text-primary">SAB</div>
+                                    </div>
+                                    <div class="calendar-grid px-1" id="calendarGrid" style="min-height: 400px;">
+                                        <div class="d-flex flex-column align-items-center justify-content-center w-100" style="grid-column: span 7; height: 300px;">
+                                            <div class="spinner-grow text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+                                            <h6 class="fw-bold text-muted">Menyusun Mesin Waktu...</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+               <!-- ========================================== -->
+                <!-- 2. PUSAT DATA (UPLOAD + DATA MASTER)       -->
+                <!-- ========================================== -->
+                <div id="pusatdata" class="page-section d-none fade-in">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4 mt-2 border-bottom pb-3">
+                        <div>
+                            <h4 class="fw-black mb-0 text-dark d-flex align-items-center">
+                                <i class="bi bi-server text-info me-2 pulse-animation"></i> Pusat Data
+                            </h4>
+                            <p class="text-muted small fw-medium mb-0 mt-1">Gerbang utama manajemen file rekonsiliasi dan database sistem terpusat.</p>
+                        </div>
+                        <button class="btn btn-info btn-sm rounded-pill fw-bold text-white shadow-sm bouncy-hover px-3 d-flex align-items-center" onclick="fetchDatabaseData()">
+                            <i class="bi bi-arrow-repeat me-1"></i> Sinkronisasi
+                        </button>
+                    </div>
+
+                    <!-- Switch Tabs Pusat Data -->
+                    <ul class="nav nav-pills bg-light p-1 rounded-pill shadow-sm mb-4 border d-flex flex-nowrap overflow-auto hide-scrollbar" role="tablist">
+                        <li class="nav-item flex-fill" role="presentation">
+                            <button class="nav-link active w-100 rounded-pill fw-bold py-2 text-nowrap transition-all" id="tab-data-upload" data-bs-toggle="pill" data-bs-target="#data-upload" type="button" style="font-size: 0.85rem;">
+                                <i class="bi bi-cloud-arrow-up-fill text-primary me-1"></i> Upload File Data
+                            </button>
+                        </li>
+                        <li class="nav-item flex-fill" role="presentation">
+                            <button class="nav-link w-100 rounded-pill fw-bold py-2 text-nowrap transition-all" id="tab-data-master" data-bs-toggle="pill" data-bs-target="#data-master" type="button" style="font-size: 0.85rem;">
+                                <i class="bi bi-database-fill text-success me-1"></i> Database Master
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- TAB 1: UPLOAD & SINKRONISASI -->
+                        <div class="tab-pane fade show active" id="data-upload" role="tabpanel">
+                            <div class="data-completeness-banner"></div>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6 d-flex flex-column">
+                                    <div class="drop-zone rounded-4 p-4 text-center shadow-sm flex-fill d-flex flex-column justify-content-center align-items-center" id="dzGL">
+                                        <span class="badge bg-primary rounded-pill file-count-badge d-none" id="countGL">0 File</span>
+                                        <i class="bi bi-file-earmark-text-fill text-primary mb-2 d-block" style="font-size: 3rem;"></i>
+                                        <h6 class="fw-bold text-dark mb-1">Upload Data GL (Sistem)</h6>
+                                        <p class="small text-muted mb-0">Tarik & Lepas file di sini, atau klik untuk memilih.<br><b>(Bisa lebih dari 1 file)</b></p>
+                                        <input type="file" id="glFile" multiple accept=".txt,.csv,.xls,.xlsx">
+                                    </div>
+                                    <button class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm mt-3 bouncy-hover" onclick="processGL()"><i class="bi bi-gear-fill"></i> Proses GL</button>
+                                </div>
+                                <div class="col-md-6 d-flex flex-column">
+                                    <div class="drop-zone rounded-4 p-4 text-center shadow-sm flex-fill d-flex flex-column justify-content-center align-items-center" id="dzEJ">
+                                        <span class="badge bg-success rounded-pill file-count-badge d-none" id="countEJ">0 File</span>
+                                        <i class="bi bi-receipt text-success mb-2 d-block" style="font-size: 3rem;"></i>
+                                        <h6 class="fw-bold text-dark mb-1">Upload Data EJ (Mesin)</h6>
+                                        <p class="small text-muted mb-0">Tarik & Lepas file Jurnal (.jrn) di sini, atau klik.<br><b>(Bisa lebih dari 1 file)</b></p>
+                                        <input type="file" id="ejFile" multiple accept=".txt,.jrn,.csv">
+                                    </div>
+                                    <button class="btn btn-success w-100 rounded-pill fw-bold shadow-sm mt-3 bouncy-hover" onclick="processEJ()"><i class="bi bi-gear-fill"></i> Proses EJ</button>
+                                </div>
+                            </div>
+                            
+                            <!-- TABEL RIWAYAT UPLOAD -->
+                            <div class="card bg-white border-0 shadow-sm rounded-4 p-3 bouncy-hover">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-calendar3 text-info"></i> Ringkasan Data Berdasarkan Tanggal</h6>
+                                    <input type="text" id="filterUploadHist" class="form-control form-control-sm rounded-pill bg-light border-0 w-auto px-3" placeholder="Cari Tanggal..." oninput="changePage('uploadHist', 1); renderUploadHistory();">
+                                </div>
+                                <div class="table-responsive rounded-4 border">
+                                    <table class="table table-hover table-sm table-custom-compact align-middle mb-0 text-nowrap">
+                                        <thead class="table-light"><tr><th>Sumber File</th><th>Tanggal Transaksi</th><th>Total Terdata</th><th>Rincian</th></tr></thead>
+                                        <tbody id="tableBodyUploadHist"></tbody>
+                                    </table>
+                                </div>
+                                <div id="paginationUploadHist"></div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: DATABASE MASTER -->
+                        <div class="tab-pane fade" id="data-master" role="tabpanel">
+                            <!-- KARTU SUMMARY DATA MASTER -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <div class="card bg-primary text-white border-0 shadow-sm rounded-4 p-4 bouncy-hover overflow-hidden position-relative h-100">
+                                        <i class="bi bi-server position-absolute end-0 bottom-0 opacity-25" style="font-size: 7rem; margin-bottom: -15px; margin-right: -10px;"></i>
+                                        <div class="position-relative z-1">
+                                            <span class="badge bg-white text-primary rounded-pill mb-2 fw-bold shadow-sm"><i class="bi bi-file-earmark-text-fill"></i> Data Sistem</span>
+                                            <h2 class="fw-black mb-0 text-white" id="dmTotalGL">0</h2>
+                                            <p class="small text-white-50 fw-medium mb-0 mt-1">Total Transaksi GL</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-success text-white border-0 shadow-sm rounded-4 p-4 bouncy-hover overflow-hidden position-relative h-100">
+                                        <i class="bi bi-receipt position-absolute end-0 bottom-0 opacity-25" style="font-size: 7rem; margin-bottom: -15px; margin-right: -10px;"></i>
+                                        <div class="position-relative z-1">
+                                            <span class="badge bg-white text-success rounded-pill mb-2 fw-bold shadow-sm"><i class="bi bi-printer-fill"></i> Data Mesin</span>
+                                            <h2 class="fw-black mb-0 text-white" id="dmTotalEJ">0</h2>
+                                            <p class="small text-white-50 fw-medium mb-0 mt-1">Total Transaksi EJ</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-danger text-white border-0 shadow-sm rounded-4 p-4 bouncy-hover overflow-hidden position-relative h-100">
+                                        <i class="bi bi-shield-exclamation position-absolute end-0 bottom-0 opacity-25" style="font-size: 7rem; margin-bottom: -15px; margin-right: -10px;"></i>
+                                        <div class="position-relative z-1">
+                                            <span class="badge bg-white text-danger rounded-pill mb-2 fw-bold shadow-sm"><i class="bi bi-exclamation-triangle-fill"></i> Kasus Selisih</span>
+                                            <h2 class="fw-black mb-0 text-white" id="dmTotalSelisih">0</h2>
+                                            <p class="small text-white-50 fw-medium mb-0 mt-1">Anomali Terdeteksi</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert bg-dark text-white border-0 py-2 px-4 rounded-pill shadow-sm d-flex align-items-center mb-4 bouncy-hover" style="font-size: 0.75rem;">
+                                <i class="bi bi-shield-lock-fill text-warning fs-5 me-3"></i> 
+                                <span class="fw-medium"><strong>Sistem Auto-Limit Aktif.</strong> Menampilkan data maksimal 5.000 transaksi terbaru.</span>
+                            </div>
+
+                            <!-- TOOLBAR FILTER -->
+                            <div class="card bg-white border border-light shadow-sm rounded-pill mb-4 p-2">
+                                <div class="row g-2 align-items-center px-2">
+                                    <div class="col-6 col-md-2"><div class="input-group input-group-sm"><span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-calendar-date"></i></span><input type="date" id="filterStart" class="form-control bg-light border-0 rounded-pill px-2 fw-bold text-secondary" onchange="changePage('master', 1); renderDataMaster()"></div></div>
+                                    <div class="col-6 col-md-3"><div class="input-group input-group-sm"><span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-receipt"></i></span><input type="text" id="filterResiDm" list="dl-resi" class="form-control bg-light border-0 rounded-pill px-3 fw-bold text-dark" placeholder="Cari Resi..." oninput="changePage('master', 1); renderDataMaster()"></div></div>
+                                    <div class="col-4 col-md-2"><div class="input-group input-group-sm"><span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-hdd-rack"></i></span><input type="text" id="filterAtmDm" list="dl-atm" class="form-control bg-light border-0 rounded-pill px-3 fw-bold text-dark" placeholder="ID Mesin..." oninput="changePage('master', 1); renderDataMaster()"></div></div>
+                                    <div class="col-4 col-md-2"><div class="input-group input-group-sm"><span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-cash"></i></span><input type="number" id="filterNominalDm" list="dl-nominal" class="form-control bg-light border-0 rounded-pill px-3 fw-bold text-dark" placeholder="Rp..." oninput="changePage('master', 1); renderDataMaster()"></div></div>
+                                    <div class="col-12 col-md-3">
+                                        <select id="filterStatus" class="form-select form-select-sm bg-dark text-white border-0 rounded-pill px-3 fw-bold shadow-sm" onchange="changePage('master', 1); renderDataMaster()">
+                                            <option value="SEMUA">Semua Status Transaksi</option>
+                                            <option value="SELISIH">Hanya Data Anomali</option>
+                                            <option value="AMAN">Hanya Data Cocok (Aman)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TABEL DATA MASTER -->
+                            <div class="table-responsive rounded-4 shadow-sm bg-white border">
+                                <table class="table align-middle mb-0 text-nowrap table-hover table-sm table-custom-compact">
+                                    <thead class="table-light sticky-top border-bottom">
+                                        <tr><th width="10%" class="ps-3">SUMBER</th><th width="15%">TANGGAL TRANSAKSI</th><th width="15%">ID MESIN</th><th width="15%">NOMOR RESI</th><th width="20%">NOMINAL TRANSAKSI</th><th width="25%">KETERANGAN / STATUS</th></tr>
+                                    </thead>
+                                    <tbody id="tableBodyDataMaster"></tbody>
+                                </table>
+                            </div>
+                            <div id="paginationMaster"></div>
+                        </div>
+                    </div>
+                </div>
+               
+
+            <!-- ========================================== -->
+                <!-- 3. ANALISA AI (Pencocokan Cerdas)          -->
+                <!-- ========================================== -->
+                <div id="analisa" class="page-section d-none fade-in">
+                    <!-- Header dengan Tombol Tour -->
+                    <div class="d-flex justify-content-between align-items-center mb-4 mt-2 border-bottom pb-3">
+                        <div>
+                            <h4 class="fw-black mb-0 text-dark d-flex align-items-center">
+                                <i class="bi bi-search text-warning me-2 pulse-animation"></i> Analisa & Pencocokan AI
+                            </h4>
+                            <p class="text-muted small fw-medium mb-0 mt-1">Mesin pencocokan pintar untuk mendeteksi anomali (selisih) antara data Sistem vs Mesin.</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-warning btn-sm rounded-pill fw-bold text-dark shadow-sm bouncy-hover px-3 d-flex align-items-center" onclick="startAnalisaTour()">
+                                <i class="bi bi-magic me-1"></i> Panduan Analisa
+                            </button>
+                            <!-- Pastikan tombol eksekusi Anda memiliki ID ini agar bisa disorot -->
+                            <button id="btnRunAnalisa" class="btn btn-warning btn-sm rounded-pill fw-bold shadow-sm bouncy-hover px-3 d-flex align-items-center" onclick="jalankanAnalisaAI()">
+                                <i class="bi bi-lightning-charge-fill me-1"></i> Jalankan Analisa AI
+                            </button>
+                        </div>
+                    </div>
+
+                    
+                    <div class="data-completeness-banner"></div>
+
+                    <!-- KARTU SUMMARY UTAMA (Live Widgets) -->
+                    <div class="row g-3 mb-4">
+                        <!-- Widget Selisih Kurang -->
+                        <div class="col-md-6">
+                            <div class="card bg-danger text-white border-0 shadow-sm rounded-4 p-4 bouncy-hover position-relative overflow-hidden h-100">
+                                <i class="bi bi-arrow-down-circle-fill position-absolute end-0 bottom-0 opacity-25" style="font-size: 7rem; margin-bottom: -20px; margin-right: -10px;"></i>
+                                <div class="position-relative z-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="badge bg-white text-danger shadow-sm rounded-pill fw-bold px-2 py-1" style="font-size: 0.65rem;">
+                                            <i class="bi bi-exclamation-triangle-fill"></i> UANG MESIN HILANG
+                                        </span>
+                                    </div>
+                                    <h2 id="totalKurangRp" class="fw-black mb-0 mt-2 text-white" style="letter-spacing: -1px;">Rp 0</h2>
+                                    <p class="small text-white-50 fw-medium mb-0 mt-1">Total Nominal Selisih Kurang (Gantung)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Widget Selisih Lebih -->
+                        <div class="col-md-6">
+                            <div class="card bg-success text-white border-0 shadow-sm rounded-4 p-4 bouncy-hover position-relative overflow-hidden h-100">
+                                <i class="bi bi-arrow-up-circle-fill position-absolute end-0 bottom-0 opacity-25" style="font-size: 7rem; margin-bottom: -20px; margin-right: -10px;"></i>
+                                <div class="position-relative z-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="badge bg-white text-success shadow-sm rounded-pill fw-bold px-2 py-1" style="font-size: 0.65rem;">
+                                            <i class="bi bi-info-circle-fill"></i> UANG MESIN SISA
+                                        </span>
+                                    </div>
+                                    <h2 id="totalLebihRp" class="fw-black mb-0 mt-2 text-white" style="letter-spacing: -1px;">Rp 0</h2>
+                                    <p class="small text-white-50 fw-medium mb-0 mt-1">Total Nominal Selisih Lebih (Gantung)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KARTU HIERARKI PENYELESAIAN -->
+                    <div class="card bg-white border-0 shadow-sm rounded-4 mb-4 p-4 bouncy-hover">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold text-dark mb-0"><i class="bi bi-bar-chart-steps text-primary me-2"></i> Progress Penyelesaian Kasus</h6>
+                            <span class="badge bg-light text-secondary border rounded-pill">Bulan Ini</span>
+                        </div>
+                        <div class="row text-center mb-3 g-2">
+                            <div class="col-4 border-end border-light">
+                                <span class="small text-muted fw-bold d-block mb-1" style="font-size: 0.7rem;"><i class="bi bi-search text-secondary"></i> Total Temuan</span>
+                                <h5 class="fw-black text-dark mb-0" id="hierarki-tot-selisih">Rp 0</h5>
+                            </div>
+                            <div class="col-4 border-end border-light">
+                                <span class="small text-muted fw-bold d-block mb-1" style="font-size: 0.7rem;"><i class="bi bi-check-all text-success"></i> Diselesaikan</span>
+                                <h5 class="fw-black text-success mb-0" id="hierarki-tot-selesai">Rp 0</h5>
+                            </div>
+                            <div class="col-4">
+                                <span class="small text-muted fw-bold d-block mb-1" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split text-danger"></i> Menggantung</span>
+                                <h5 class="fw-black text-danger mb-0" id="hierarki-tot-belum">Rp 0</h5>
+                            </div>
+                        </div>
+                        <div class="progress rounded-pill shadow-inner bg-secondary-subtle" style="height: 10px;">
+                            <div id="hierarki-progress" class="progress-bar bg-success progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- SMART AI SCANNER BANNER -->
+                    <div class="alert border-0 text-dark py-3 px-4 rounded-4 shadow-sm mb-4 d-flex align-items-center" style="background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);">
+                        <div class="bg-white rounded-circle p-2 shadow-sm me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                            <i class="bi bi-robot fs-4 text-primary" style="animation: bounce 2s infinite;"></i>
+                        </div>
+                        <div>
+                            <strong class="d-block mb-1 fs-6">Smart AI Scanner Sedang Aktif</strong>
+                            <span class="small opacity-75 fw-medium">Sistem secara otomatis menelusuri riwayat <b>BA Opname Fisik</b> untuk mencarikan kompensasi (tambalan) bagi transaksi yang selisih.</span>
+                        </div>
+                    </div>
+
+                    <!-- TOOLBAR FILTER & PENCARIAN -->
+                    <div class="card bg-white border border-light shadow-sm rounded-pill mb-4 p-2">
+                        <div class="row g-2 align-items-center px-2">
+                            <div class="col-4 col-md-3">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-receipt"></i></span>
+                                    <input type="text" id="filterResiAn" list="dl-resi" class="form-control bg-light border-0 rounded-pill px-3 fw-bold text-dark" placeholder="Cari Resi..." oninput="changePage('analisaKurang', 1); changePage('analisaLebih', 1); changePage('analisaSelesai', 1); renderSelisihTablesFiltered()">
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-hdd-rack"></i></span>
+                                    <input type="text" id="filterAtmAn" list="dl-atm" class="form-control bg-light border-0 rounded-pill px-3 fw-bold text-dark" placeholder="ID Mesin..." oninput="changePage('analisaKurang', 1); changePage('analisaLebih', 1); changePage('analisaSelesai', 1); renderSelisihTablesFiltered()">
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-cash"></i></span>
+                                    <input type="number" id="filterNominalAn" list="dl-nominal" class="form-control bg-light border-0 rounded-pill px-3 fw-bold text-dark" placeholder="Nominal (Rp)..." oninput="changePage('analisaKurang', 1); changePage('analisaLebih', 1); changePage('analisaSelesai', 1); renderSelisihTablesFiltered()">
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <select id="sortDateAn" class="form-select form-select-sm bg-dark text-white border-0 rounded-pill px-3 fw-bold shadow-sm" onchange="changePage('analisaKurang', 1); changePage('analisaLebih', 1); changePage('analisaSelesai', 1); renderSelisihTablesFiltered()">
+                                    <option value="desc">Urutkan: Transaksi Terbaru</option>
+                                    <option value="asc">Urutkan: Transaksi Terlama</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB KATEGORI SELISIH -->
+                    <div class="bg-light p-1 rounded-pill shadow-sm mb-3 border d-flex flex-nowrap overflow-auto hide-scrollbar" id="pills-tab" role="tablist">
+                        <button class="btn flex-fill active rounded-pill fw-bold py-2 text-nowrap transition-all position-relative" id="tab-kurang" data-bs-toggle="pill" data-bs-target="#kurang" type="button" style="font-size: 0.85rem;">
+                            <i class="bi bi-arrow-down-circle text-danger me-1"></i> Kasus Kurang 
+                            <span class="badge bg-danger text-white ms-1 rounded-pill shadow-sm position-absolute top-0 start-100 translate-middle" id="countKurang" style="margin-left:-15px; margin-top:10px;">0</span>
+                        </button>
+                        <button class="btn flex-fill rounded-pill fw-bold py-2 text-nowrap transition-all position-relative" id="tab-lebih" data-bs-toggle="pill" data-bs-target="#lebih" type="button" style="font-size: 0.85rem;">
+                            <i class="bi bi-arrow-up-circle text-success me-1"></i> Kasus Lebih 
+                            <span class="badge bg-success text-white ms-1 rounded-pill shadow-sm position-absolute top-0 start-100 translate-middle" id="countLebih" style="margin-left:-15px; margin-top:10px;">0</span>
+                        </button>
+                        <button class="btn flex-fill rounded-pill fw-bold py-2 text-nowrap transition-all" id="tab-selesai" data-bs-toggle="pill" data-bs-target="#selesai" type="button" style="font-size: 0.85rem;">
+                            <i class="bi bi-check2-all text-primary me-1"></i> Selesai Ditutup
+                        </button>
+                    </div>
+
+                    <!-- ISI TABEL TAB -->
+                    <div class="tab-content" id="pills-tabContent">
+                        <div class="tab-pane fade show active" id="kurang" role="tabpanel">
+                            <div class="table-responsive rounded-4 shadow-sm bg-white border">
+                                <table class="table table-hover table-sm table-custom-compact align-middle mb-0 text-nowrap">
+                                    <thead class="table-danger border-danger-subtle"><tr><th>TANGGAL</th><th>MESIN</th><th>NO RESI</th><th>NOMINAL SELISIH</th><th>KETERANGAN / REKOMENDASI AI</th><th class="text-center">AKSI</th></tr></thead>
+                                    <tbody id="tableBodyKurang"></tbody>
+                                </table>
+                            </div>
+                            <div id="paginationAnalisaKurang"></div>
+                        </div>
+                        
+                        <div class="tab-pane fade" id="lebih" role="tabpanel">
+                            <div class="table-responsive rounded-4 shadow-sm bg-white border">
+                                <table class="table table-hover table-sm table-custom-compact align-middle mb-0 text-nowrap">
+                                    <thead class="table-success border-success-subtle"><tr><th>TANGGAL</th><th>MESIN</th><th>NO RESI</th><th>NOMINAL SELISIH</th><th>KETERANGAN / REKOMENDASI AI</th><th class="text-center">AKSI</th></tr></thead>
+                                    <tbody id="tableBodyLebih"></tbody>
+                                </table>
+                            </div>
+                            <div id="paginationAnalisaLebih"></div>
+                        </div>
+                        
+                        <div class="tab-pane fade" id="selesai" role="tabpanel">
+                            <div class="table-responsive rounded-4 shadow-sm bg-white border">
+                                <table class="table table-hover table-sm table-custom-compact align-middle mb-0 text-nowrap">
+                                    <thead class="table-primary border-primary-subtle"><tr><th>TANGGAL</th><th>MESIN</th><th>NO RESI</th><th>NOMINAL SELISIH</th><th>ALASAN PENYELESAIAN</th><th class="text-center">AKSI</th></tr></thead>
+                                    <tbody id="tableBodySelesai"></tbody>
+                                </table>
+                            </div>
+                            <div id="paginationAnalisaSelesai"></div>
+                        </div>
+                    </div>
+                </div>
+
+              <div id="opname" class="page-section d-none fade-in">
+                    <!-- Header dengan Tombol Panduan Interaktif -->
+                    <div class="d-flex justify-content-between align-items-center mb-4 mt-2 border-bottom pb-3">
+                        <div>
+                            <h4 class="fw-black mb-0 text-dark d-flex align-items-center">
+                                <i class="bi bi-safe-fill text-danger me-2"></i> Opname Kas Fisik
+                            </h4>
+                            <p class="text-muted small fw-medium mb-0 mt-1">Modul perhitungan uang fisik laci ATM dan manajemen Berita Acara penambalan selisih.</p>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm rounded-pill fw-bold shadow-sm bouncy-hover px-3 d-flex align-items-center" onclick="startOpnameTour()">
+                            <i class="bi bi-question-circle-fill me-1"></i> Panduan Menu (Tour)
+                        </button>
+                    </div>
+
+                   <!-- Modern Segmented Tabs (DIPERBAIKI) -->
+                    <ul class="nav nav-pills bg-light p-1 rounded-pill shadow-sm mb-4 border d-flex flex-nowrap overflow-auto hide-scrollbar" role="tablist">
+                        <li class="nav-item flex-fill" role="presentation">
+                            <button class="nav-link active w-100 rounded-pill fw-bold py-2 text-nowrap transition-all" id="tab-op-form" data-bs-toggle="pill" data-bs-target="#op-form-tab" type="button" style="font-size: 0.85rem;">
+                                <i class="bi bi-pencil-square text-primary me-1"></i> Form Input B/A
+                            </button>
+                        </li>
+                        <li class="nav-item flex-fill" role="presentation">
+                            <button class="nav-link w-100 rounded-pill fw-bold py-2 text-nowrap transition-all" id="tab-op-riwayat" data-bs-toggle="pill" data-bs-target="#op-riwayat-tab" type="button" style="font-size: 0.85rem;" onclick="fetchOpnameHistory()">
+                                <i class="bi bi-clock-history text-danger me-1"></i> Riwayat & Arsip B/A
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- TAB 1: INPUT FORM SUPER INTERAKTIF -->
+                        <div class="tab-pane fade show active" id="op-form-tab" role="tabpanel">
+                            <div class="row g-4">
+                                <!-- Kolom Kiri: Form & Smart Insight -->
+                                <div class="col-lg-5">
+                                    <div class="card bg-white shadow-sm border-0 rounded-4 bouncy-hover mb-3">
+                                        <div class="card-header bg-transparent border-bottom-0 pt-4 pb-0 px-4">
+                                            <h6 class="fw-bold text-dark mb-0"><i class="bi bi-atm text-primary me-2"></i> Identitas Mesin & Waktu</h6>
+                                        </div>
+                                        <div class="card-body p-4">
+                                            <input type="hidden" id="opEditId">
+                                            
+                                            <div class="mb-4">
+                                                <label class="small fw-bold text-muted mb-2" style="font-size:0.75rem">ID MESIN ATM</label>
+                                                <div class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden border border-primary-subtle">
+                                                    <span class="input-group-text bg-light border-0 text-primary px-4"><i class="bi bi-search"></i></span>
+                                                    <input type="text" id="opAtmId" list="dl-atm" class="form-control border-0 bg-light fw-black text-dark fs-5" placeholder="Ketik KTM..." oninput="updateOpnameSmartInfo()">
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label class="small fw-bold text-muted mb-2" style="font-size:0.75rem">WAKTU PELAKSANAAN OPNAME</label>
+                                                <input type="datetime-local" id="opWaktu" class="form-control form-control-lg rounded-pill bg-light border-0 text-secondary shadow-inner fw-bold px-4">
+                                            </div>
+
+                                            <!-- TAMBAHKAN INI TEPAT DI BAWAH WAKTU OPNAME -->
+                                            <div class="mt-4">
+                                                <label class="small fw-bold text-muted mb-2" style="font-size:0.75rem">NAMA SECURITY (SHIFT SAAT INI)</label>
+                                                <div class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden border border-primary-subtle">
+                                                    <span class="input-group-text bg-light border-0 text-primary px-4"><i class="bi bi-shield-check"></i></span>
+                                                    <input type="text" id="opSecurityName" class="form-control border-0 bg-light fw-bold text-dark fs-6" placeholder="Ketik Nama Security...">
+                                                </div>
+                                                <small class="text-muted fw-bold d-block mt-2" style="font-size:0.65rem;">*Kosongkan jika ingin menggunakan nama default dari Pengaturan.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Panel Smart Insight (Live Update) -->
+                                    <div id="opSmartInfoPanel" class="card bg-info-subtle border-0 rounded-4 shadow-sm d-none bouncy-hover transition-all overflow-hidden position-relative">
+                                        <div class="position-absolute top-0 end-0 opacity-10 pt-2 pe-2"><i class="bi bi-robot" style="font-size: 5rem;"></i></div>
+                                        <div class="card-body p-4 position-relative z-1">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="bg-white rounded-circle p-2 shadow-sm me-2 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                                    <i class="bi bi-stars text-info fs-5"></i>
+                                                </div>
+                                                <h6 class="fw-bold text-dark mb-0">AI Insight Mesin</h6>
+                                            </div>
+                                            <div id="opSmartContent" class="bg-white p-3 rounded-4 shadow-sm border border-info-subtle">
+                                                <!-- Diisi otomatis oleh JS -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Kolom Kanan: Visual Kalkulator -->
+                                <div class="col-lg-7">
+                                    <div class="card bg-white shadow-sm border-0 rounded-4 h-100 overflow-hidden d-flex flex-column">
+                                        <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center px-4">
+                                            <h6 class="fw-bold mb-0"><i class="bi bi-calculator-fill text-warning me-2"></i> Kalkulator Rekonsiliasi Kas</h6>
+                                            <span class="badge bg-white text-dark rounded-pill fw-bold">Tahap 1 dari 2</span>
+                                        </div>
+                                        <div class="card-body p-4 bg-light flex-fill">
+                                            <div class="row g-3 h-100">
+                                                <!-- Tarikan Sistem -->
+                                                <div class="col-md-6 d-flex flex-column">
+                                                    <div class="p-3 bg-white rounded-4 border border-primary-subtle shadow-sm flex-fill position-relative d-flex flex-column">
+                                                        <span class="badge bg-primary position-absolute top-0 start-50 translate-middle rounded-pill px-3 py-2 shadow-sm border border-2 border-white"><i class="bi bi-pc-display"></i> CATATAN SISTEM</span>
+                                                        <div class="mt-4 flex-fill">
+                                                            <label class="small fw-bold text-muted mb-2 d-block text-center" style="font-size:0.65rem">1. SALDO SEBELUM PENGISIAN (Rp)</label>
+                                                            <input type="number" id="opSysSebelum" class="form-control form-control-lg rounded-pill mb-4 fw-bold border-primary-subtle text-primary text-center shadow-inner" placeholder="0" oninput="calcOpname()">
+                                                            
+                                                            <label class="small fw-bold text-muted mb-2 d-block text-center" style="font-size:0.65rem">2. KAS YANG DITAMBAHKAN (Rp)</label>
+                                                            <input type="number" id="opSysTambah" class="form-control form-control-lg rounded-pill mb-3 fw-bold border-primary-subtle text-primary text-center shadow-inner" placeholder="0" oninput="calcOpname()">
+                                                        </div>
+                                                        <div class="bg-primary-subtle p-3 rounded-4 text-center mt-3 border border-primary-subtle">
+                                                            <span class="small fw-bold text-primary d-block mb-1" style="font-size:0.65rem">TOTAL TARGET SISTEM</span>
+                                                            <h5 class="fw-black text-dark mb-0" id="opSysTotal">Rp 0</h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Perhitungan Fisik -->
+                                                <div class="col-md-6 d-flex flex-column">
+                                                    <div class="p-3 bg-white rounded-4 border border-warning-subtle shadow-sm flex-fill position-relative d-flex flex-column">
+                                                        <span class="badge bg-warning text-dark position-absolute top-0 start-50 translate-middle rounded-pill px-3 py-2 shadow-sm border border-2 border-white"><i class="bi bi-cash-stack"></i> FISIK LACI</span>
+                                                        <div class="mt-4 flex-fill d-flex flex-column justify-content-center">
+                                                            <label class="small fw-bold text-muted mb-2 text-center" style="font-size:0.65rem">3. HASIL PERHITUNGAN UANG FISIK (Rp)</label>
+                                                            <input type="number" id="opFisik" class="form-control form-control-lg rounded-pill mb-3 fw-black border-warning text-center fs-3 shadow-inner text-dark" placeholder="0" oninput="calcOpname()" style="height: 70px;">
+                                                        </div>
+                                                        <div id="opSelisihBox" class="p-3 rounded-4 text-center mt-3 transition-all bg-secondary-subtle border border-secondary-subtle">
+                                                            <span class="small fw-bold text-dark d-block mb-1" style="font-size:0.65rem">STATUS SELISIH KAS</span>
+                                                            <h4 class="fw-black mb-1" id="opSelisihText">Rp 0</h4>
+                                                            <span id="opSelisihBadge" class="badge bg-secondary rounded-pill mt-1 px-3 py-2 shadow-sm"><i class="bi bi-dash-circle"></i> Balance</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-footer bg-white border-top p-4 d-flex gap-3">
+                                            <button class="btn btn-outline-dark btn-lg rounded-pill fw-bold px-4 bouncy-hover shadow-sm d-flex align-items-center" onclick="previewBAOpname()" title="Pratinjau Kertas A4">
+                                                <i class="bi bi-printer me-2"></i> Pratinjau
+                                            </button>
+                                            <button class="btn btn-primary btn-lg rounded-pill fw-bold flex-fill bouncy-hover shadow-sm d-flex align-items-center justify-content-center" onclick="saveOpnameData()">
+                                                <i class="bi bi-cloud-arrow-up-fill me-2 fs-5"></i> Simpan ke Database
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: RIWAYAT OPNAME -->
+                        <div class="tab-pane fade" id="op-riwayat-tab" role="tabpanel">
+                            <!-- Banner Progress Mewah -->
+                            <div class="card bg-dark text-white border-0 shadow-sm rounded-4 mb-4 overflow-hidden position-relative bouncy-hover">
+                                <i class="bi bi-shield-lock-fill position-absolute end-0 bottom-0 opacity-10" style="font-size: 10rem; margin-bottom: -30px; margin-right: -10px;"></i>
+                                <div class="card-body p-4 position-relative z-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                        <h6 class="fw-bold text-warning mb-0"><i class="bi bi-pie-chart-fill me-2"></i> Ketersediaan Kompensasi B/A Opname Fisik</h6>
+                                        <span class="badge bg-white text-dark rounded-pill fw-bold px-3">Bulan Aktif</span>
+                                    </div>
+                                    
+                                    <div class="row text-center mb-4 g-3">
+                                        <div class="col-4 border-end border-secondary">
+                                            <span class="small text-light fw-medium d-block mb-1" style="font-size: 0.7rem;">TOTAL SELISIH FISIK</span>
+                                            <h4 class="fw-black mb-0 text-white" id="op-hierarki-tot">Rp 0</h4>
+                                        </div>
+                                        <div class="col-4 border-end border-secondary">
+                                            <span class="small text-light fw-medium d-block mb-1" style="font-size: 0.7rem;">TERPAKAI (MENUTUP KASUS)</span>
+                                            <h4 class="fw-black mb-0 text-info" id="op-hierarki-pakai">Rp 0</h4>
+                                        </div>
+                                        <div class="col-4">
+                                            <span class="small text-light fw-medium d-block mb-1" style="font-size: 0.7rem;">SISA KUOTA B/A</span>
+                                            <h4 class="fw-black mb-0 text-warning" id="op-hierarki-sisa">Rp 0</h4>
+                                        </div>
+                                    </div>
+                                    <div class="progress rounded-pill shadow-inner bg-secondary border border-secondary" style="height: 10px;">
+                                        <div id="op-hierarki-progress" class="progress-bar bg-info progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Toolbar Filter ala Enterprise -->
+                            <div class="card bg-white border border-light shadow-sm rounded-pill mb-4 p-2">
+                                <div class="row g-2 align-items-center px-2">
+                                    <div class="col-md-3">
+                                        <h6 class="fw-bold text-dark mb-0 ms-2"><i class="bi bi-list-ul text-danger me-2"></i> Daftar Opname</h6>
+                                    </div>
+                                    <div class="col-6 col-md-5">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-light border-0 text-muted pe-1 rounded-start-pill"><i class="bi bi-hdd-rack"></i></span>
+                                            <input type="text" id="filterAtmOp" list="dl-atm" class="form-control bg-light border-0 rounded-end-pill px-3 fw-bold text-dark" placeholder="Cari ID Mesin..." oninput="changePage('opname', 1); renderOpnameTable();">
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-light border-0 text-muted pe-1 rounded-start-pill"><i class="bi bi-calendar-date"></i></span>
+                                            <input type="date" id="filterTglOp" class="form-control bg-light border-0 rounded-end-pill px-3 fw-bold text-secondary" onchange="changePage('opname', 1); renderOpnameTable();">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tabel Interaktif -->
+                            <div class="table-responsive rounded-4 shadow-sm bg-white border">
+                                <table class="table table-hover table-sm table-custom-compact align-middle mb-0 text-nowrap">
+                                    <thead class="table-light sticky-top border-bottom">
+                                        <tr>
+                                            <th width="20%" class="ps-3">WAKTU PELAKSANAAN</th>
+                                            <th width="15%">MESIN ATM</th>
+                                            <th width="20%">HASIL HITUNG FISIK</th>
+                                            <th width="25%">STATUS PENAMBALAN AI</th>
+                                            <th width="20%" class="text-center pe-3">AKSI</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tableBodyOpname"></tbody>
+                                </table>
+                            </div>
+                            <div id="paginationOpname" class="mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ARSIP UNIVERSAL -->
+                <div id="arsip" class="page-section d-none fade-in">
+                    <!-- Header & Tombol Aksi Arsip -->
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 mt-2 border-bottom pb-3 gap-3">
+                        <div>
+                            <h4 class="fw-black mb-0 text-dark d-flex align-items-center">
+                                <i class="bi bi-archive-fill text-dark me-2 pulse-animation"></i> Arsip Universal
+                            </h4>
+                            <p class="text-muted small fw-medium mb-0 mt-1">Pusat rekam jejak (Audit Trail) seluruh kasus selisih dari awal tahun hingga detik ini.</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-dark btn-sm rounded-pill fw-bold shadow-sm bouncy-hover px-3 d-flex align-items-center" onclick="bukaGeneratorPipeline()">
+                                <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i> Rekap Pipeline Bulanan
+                            </button>
+                            <button class="btn btn-primary btn-sm rounded-pill fw-bold shadow-sm bouncy-hover px-3 d-flex align-items-center" onclick="superApp.fetchUniversalData()">
+                                <i class="bi bi-cloud-download-fill me-1"></i> Tarik Data Cloud
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- KARTU SUMMARY ARSIP (Live Widgets) -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-dark text-white border-0 shadow-sm rounded-4 p-4 bouncy-hover overflow-hidden position-relative h-100">
+                                <i class="bi bi-collection-fill position-absolute end-0 bottom-0 opacity-25" style="font-size: 7rem; margin-bottom: -15px; margin-right: -10px;"></i>
+                                <div class="position-relative z-1">
+                                    <span class="badge bg-white text-dark rounded-pill mb-2 fw-bold shadow-sm"><i class="bi bi-folder2-open"></i> Total Histori</span>
+                                    <h2 class="fw-black mb-0 text-white" id="arsipTotSemua">0</h2>
+                                    <p class="small text-white-50 fw-medium mb-0 mt-1">Seluruh Kasus Tercatat</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-success text-white border-0 shadow-sm rounded-4 p-4 bouncy-hover overflow-hidden position-relative h-100">
+                                <i class="bi bi-check-circle-fill position-absolute end-0 bottom-0 opacity-25" style="font-size: 7rem; margin-bottom: -15px; margin-right: -10px;"></i>
+                                <div class="position-relative z-1">
+                                    <span class="badge bg-white text-success rounded-pill mb-2 fw-bold shadow-sm"><i class="bi bi-shield-check"></i> Ditutup (Aman)</span>
+                                    <h2 class="fw-black mb-0 text-white" id="arsipTotSelesai">0</h2>
+                                    <p class="small text-white-50 fw-medium mb-0 mt-1">Kasus Berhasil Diselesaikan</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-danger text-white border-0 shadow-sm rounded-4 p-4 bouncy-hover overflow-hidden position-relative h-100">
+                                <i class="bi bi-hourglass-split position-absolute end-0 bottom-0 opacity-25" style="font-size: 7rem; margin-bottom: -15px; margin-right: -10px;"></i>
+                                <div class="position-relative z-1">
+                                    <span class="badge bg-white text-danger rounded-pill mb-2 fw-bold shadow-sm"><i class="bi bi-exclamation-triangle-fill"></i> Menggantung</span>
+                                    <h2 class="fw-black mb-0 text-white" id="arsipTotBelum">0</h2>
+                                    <p class="small text-white-50 fw-medium mb-0 mt-1">Kasus Belum Terselesaikan</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TOOLBAR FILTER & PENCARIAN -->
+                    <div class="card bg-white border border-light shadow-sm rounded-pill mb-4 p-2">
+                        <div class="row g-2 align-items-center px-2">
+                            <div class="col-12 col-md-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-search"></i></span>
+                                    <input type="text" id="arsipCari" class="form-control bg-light border-0 rounded-pill px-3 fw-bold text-dark" placeholder="Cari ID Mesin atau No. Resi..." oninput="changePage('arsipPage', 1); superApp.renderArsip();">
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-calendar-event"></i></span>
+                                    <input type="date" id="arsipTgl" class="form-control bg-light border-0 rounded-pill px-3 fw-bold text-secondary" onchange="changePage('arsipPage', 1); superApp.renderArsip();" title="Filter Tanggal Transaksi">
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <select id="arsipStatus" class="form-select form-select-sm bg-dark text-white border-0 rounded-pill px-3 fw-bold shadow-sm" onchange="changePage('arsipPage', 1); superApp.renderArsip();">
+                                    <option value="">Semua Status Penyelesaian</option>
+                                    <option value="selesai">Hanya Kasus Selesai (Ditutup)</option>
+                                    <option value="belum">Hanya Kasus Menggantung</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TABEL ARSIP -->
+                    <div class="table-responsive rounded-4 shadow-sm bg-white border">
+                        <table class="table table-hover table-sm table-custom-compact align-middle mb-0 text-nowrap">
+                            <thead class="table-secondary border-secondary">
+                                <tr>
+                                    <th width="15%" class="ps-3">TGL TRANSAKSI</th>
+                                    <th width="15%">ID MESIN</th>
+                                    <th width="15%">NOMOR RESI</th>
+                                    <th width="20%">NOMINAL SELISIH</th>
+                                    <th width="15%">STATUS</th>
+                                    <th width="20%" class="text-center pe-3">AUDIT TRAIL</th>
+                                </tr>
+                            </thead>
+                            <tbody id="arsipTbody"></tbody>
+                        </table>
+                    </div>
+                    <div id="arsipPagination" class="mt-2"></div>
+                </div>
+
+                <!-- MODAL REKAM JEJAK (AUDIT TRAIL) -->
+                <div class="modal fade" id="jejakModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content rounded-4 border-0 shadow-lg">
+                            <div class="modal-header border-0 bg-dark text-white rounded-top-4 pb-4" style="background: linear-gradient(135deg, #1f2937 0%, #111827 100%);">
+                                <div>
+                                    <h5 class="fw-black mb-1"><i class="bi bi-diagram-3-fill text-warning me-2"></i> Kronologi Audit Trail</h5>
+                                    <span class="badge bg-light text-dark rounded-pill shadow-sm px-3 py-2 fw-bold" id="jejakSub">ATM - Resi</span>
+                                </div>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body p-4 bg-white" style="margin-top: -20px; border-radius: 20px 20px 0 0; box-shadow: 0 -10px 20px rgba(0,0,0,0.1);">
+                                <div class="timeline-wrapper" id="jejakTimeline">
+                                    <!-- Dibangun otomatis oleh JS -->
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0 bg-light rounded-bottom-4 justify-content-center">
+                                <button type="button" class="btn btn-dark rounded-pill fw-bold px-5 shadow-sm bouncy-hover" data-bs-dismiss="modal">Tutup Rekam Jejak</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+              <!-- ========================================== -->
+                <!-- 2. PUSAT DATA (UPLOAD + DATA MASTER)       -->
+                <!-- ========================================== -->
+                <div id="pusatdata" class="page-section d-none fade-in">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4 mt-2 border-bottom pb-3">
+                        <div>
+                            <h4 class="fw-black mb-0 text-dark d-flex align-items-center">
+                                <i class="bi bi-server text-info me-2 pulse-animation"></i> Pusat Data
+                            </h4>
+                            <p class="text-muted small fw-medium mb-0 mt-1">Gerbang utama manajemen file rekonsiliasi dan database sistem terpusat.</p>
+                        </div>
+                        <button class="btn btn-info btn-sm rounded-pill fw-bold text-white shadow-sm bouncy-hover px-3 d-flex align-items-center" onclick="fetchDatabaseData()">
+                            <i class="bi bi-arrow-repeat me-1"></i> Sinkronisasi
+                        </button>
+                    </div>
+
+                    <!-- Switch Tabs Pusat Data -->
+                    <ul class="nav nav-pills bg-light p-1 rounded-pill shadow-sm mb-4 border d-flex flex-nowrap overflow-auto hide-scrollbar" role="tablist">
+                        <li class="nav-item flex-fill" role="presentation">
+                            <button class="nav-link active w-100 rounded-pill fw-bold py-2 text-nowrap transition-all" id="tab-data-upload" data-bs-toggle="pill" data-bs-target="#data-upload" type="button" style="font-size: 0.85rem;">
+                                <i class="bi bi-cloud-arrow-up-fill text-primary me-1"></i> Upload File Data
+                            </button>
+                        </li>
+                        <li class="nav-item flex-fill" role="presentation">
+                            <button class="nav-link w-100 rounded-pill fw-bold py-2 text-nowrap transition-all" id="tab-data-master" data-bs-toggle="pill" data-bs-target="#data-master" type="button" style="font-size: 0.85rem;">
+                                <i class="bi bi-database-fill text-success me-1"></i> Database Master
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- TAB 1: UPLOAD & SINKRONISASI -->
+                        <div class="tab-pane fade show active" id="data-upload" role="tabpanel">
+                            <div class="data-completeness-banner"></div>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6 d-flex flex-column">
+                                    <div class="drop-zone rounded-4 p-4 text-center shadow-sm flex-fill d-flex flex-column justify-content-center align-items-center" id="dzGL">
+                                        <span class="badge bg-primary rounded-pill file-count-badge d-none" id="countGL">0 File</span>
+                                        <i class="bi bi-file-earmark-text-fill text-primary mb-2 d-block" style="font-size: 3rem;"></i>
+                                        <h6 class="fw-bold text-dark mb-1">Upload Data GL (Sistem)</h6>
+                                        <p class="small text-muted mb-0">Tarik & Lepas file di sini, atau klik untuk memilih.<br><b>(Bisa lebih dari 1 file)</b></p>
+                                        <input type="file" id="glFile" multiple accept=".txt,.csv,.xls,.xlsx">
+                                    </div>
+                                    <button class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm mt-3 bouncy-hover" onclick="processGL()"><i class="bi bi-gear-fill"></i> Proses GL</button>
+                                </div>
+                                <div class="col-md-6 d-flex flex-column">
+                                    <div class="drop-zone rounded-4 p-4 text-center shadow-sm flex-fill d-flex flex-column justify-content-center align-items-center" id="dzEJ">
+                                        <span class="badge bg-success rounded-pill file-count-badge d-none" id="countEJ">0 File</span>
+                                        <i class="bi bi-receipt text-success mb-2 d-block" style="font-size: 3rem;"></i>
+                                        <h6 class="fw-bold text-dark mb-1">Upload Data EJ (Mesin)</h6>
+                                        <p class="small text-muted mb-0">Tarik & Lepas file Jurnal (.jrn) di sini, atau klik.<br><b>(Bisa lebih dari 1 file)</b></p>
+                                        <input type="file" id="ejFile" multiple accept=".txt,.jrn,.csv">
+                                    </div>
+                                    <button class="btn btn-success w-100 rounded-pill fw-bold shadow-sm mt-3 bouncy-hover" onclick="processEJ()"><i class="bi bi-gear-fill"></i> Proses EJ</button>
+                                </div>
+                            </div>
+                            
+                            <!-- TABEL RIWAYAT UPLOAD -->
+                            <div class="card bg-white border-0 shadow-sm rounded-4 p-3 bouncy-hover">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-calendar3 text-info"></i> Ringkasan Data Berdasarkan Tanggal</h6>
+                                    <input type="text" id="filterUploadHist" class="form-control form-control-sm rounded-pill bg-light border-0 w-auto px-3" placeholder="Cari Tanggal..." oninput="changePage('uploadHist', 1); renderUploadHistory();">
+                                </div>
+                                <div class="table-responsive rounded-4 border">
+                                    <table class="table table-hover table-sm table-custom-compact align-middle mb-0 text-nowrap">
+                                        <thead class="table-light"><tr><th>Sumber File</th><th>Tanggal Transaksi</th><th>Total Terdata</th><th>Rincian</th></tr></thead>
+                                        <tbody id="tableBodyUploadHist"></tbody>
+                                    </table>
+                                </div>
+                                <div id="paginationUploadHist"></div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: DATABASE MASTER -->
+                        <div class="tab-pane fade" id="data-master" role="tabpanel">
+                            <!-- KARTU SUMMARY DATA MASTER -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <div class="card bg-primary text-white border-0 shadow-sm rounded-4 p-4 bouncy-hover overflow-hidden position-relative h-100">
+                                        <i class="bi bi-server position-absolute end-0 bottom-0 opacity-25" style="font-size: 7rem; margin-bottom: -15px; margin-right: -10px;"></i>
+                                        <div class="position-relative z-1">
+                                            <span class="badge bg-white text-primary rounded-pill mb-2 fw-bold shadow-sm"><i class="bi bi-file-earmark-text-fill"></i> Data Sistem</span>
+                                            <h2 class="fw-black mb-0 text-white" id="dmTotalGL">0</h2>
+                                            <p class="small text-white-50 fw-medium mb-0 mt-1">Total Transaksi GL</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-success text-white border-0 shadow-sm rounded-4 p-4 bouncy-hover overflow-hidden position-relative h-100">
+                                        <i class="bi bi-receipt position-absolute end-0 bottom-0 opacity-25" style="font-size: 7rem; margin-bottom: -15px; margin-right: -10px;"></i>
+                                        <div class="position-relative z-1">
+                                            <span class="badge bg-white text-success rounded-pill mb-2 fw-bold shadow-sm"><i class="bi bi-printer-fill"></i> Data Mesin</span>
+                                            <h2 class="fw-black mb-0 text-white" id="dmTotalEJ">0</h2>
+                                            <p class="small text-white-50 fw-medium mb-0 mt-1">Total Transaksi EJ</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-danger text-white border-0 shadow-sm rounded-4 p-4 bouncy-hover overflow-hidden position-relative h-100">
+                                        <i class="bi bi-shield-exclamation position-absolute end-0 bottom-0 opacity-25" style="font-size: 7rem; margin-bottom: -15px; margin-right: -10px;"></i>
+                                        <div class="position-relative z-1">
+                                            <span class="badge bg-white text-danger rounded-pill mb-2 fw-bold shadow-sm"><i class="bi bi-exclamation-triangle-fill"></i> Kasus Selisih</span>
+                                            <h2 class="fw-black mb-0 text-white" id="dmTotalSelisih">0</h2>
+                                            <p class="small text-white-50 fw-medium mb-0 mt-1">Anomali Terdeteksi</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert bg-dark text-white border-0 py-2 px-4 rounded-pill shadow-sm d-flex align-items-center mb-4 bouncy-hover" style="font-size: 0.75rem;">
+                                <i class="bi bi-shield-lock-fill text-warning fs-5 me-3"></i> 
+                                <span class="fw-medium"><strong>Sistem Auto-Limit Aktif.</strong> Menampilkan data maksimal 5.000 transaksi terbaru.</span>
+                            </div>
+
+                            <!-- TOOLBAR FILTER -->
+                            <div class="card bg-white border border-light shadow-sm rounded-pill mb-4 p-2">
+                                <div class="row g-2 align-items-center px-2">
+                                    <div class="col-6 col-md-2"><div class="input-group input-group-sm"><span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-calendar-date"></i></span><input type="date" id="filterStart" class="form-control bg-light border-0 rounded-pill px-2 fw-bold text-secondary" onchange="changePage('master', 1); renderDataMaster()"></div></div>
+                                    <div class="col-6 col-md-3"><div class="input-group input-group-sm"><span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-receipt"></i></span><input type="text" id="filterResiDm" list="dl-resi" class="form-control bg-light border-0 rounded-pill px-3 fw-bold text-dark" placeholder="Cari Resi..." oninput="changePage('master', 1); renderDataMaster()"></div></div>
+                                    <div class="col-4 col-md-2"><div class="input-group input-group-sm"><span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-hdd-rack"></i></span><input type="text" id="filterAtmDm" list="dl-atm" class="form-control bg-light border-0 rounded-pill px-3 fw-bold text-dark" placeholder="ID Mesin..." oninput="changePage('master', 1); renderDataMaster()"></div></div>
+                                    <div class="col-4 col-md-2"><div class="input-group input-group-sm"><span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-cash"></i></span><input type="number" id="filterNominalDm" list="dl-nominal" class="form-control bg-light border-0 rounded-pill px-3 fw-bold text-dark" placeholder="Rp..." oninput="changePage('master', 1); renderDataMaster()"></div></div>
+                                    <div class="col-12 col-md-3">
+                                        <select id="filterStatus" class="form-select form-select-sm bg-dark text-white border-0 rounded-pill px-3 fw-bold shadow-sm" onchange="changePage('master', 1); renderDataMaster()">
+                                            <option value="SEMUA">Semua Status Transaksi</option>
+                                            <option value="SELISIH">Hanya Data Anomali</option>
+                                            <option value="AMAN">Hanya Data Cocok (Aman)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TABEL DATA MASTER -->
+                            <div class="table-responsive rounded-4 shadow-sm bg-white border">
+                                <table class="table align-middle mb-0 text-nowrap table-hover table-sm table-custom-compact">
+                                    <thead class="table-light sticky-top border-bottom">
+                                        <tr><th width="10%" class="ps-3">SUMBER</th><th width="15%">TANGGAL TRANSAKSI</th><th width="15%">ID MESIN</th><th width="15%">NOMOR RESI</th><th width="20%">NOMINAL TRANSAKSI</th><th width="25%">KETERANGAN / STATUS</th></tr>
+                                    </thead>
+                                    <tbody id="tableBodyDataMaster"></tbody>
+                                </table>
+                            </div>
+                            <div id="paginationMaster"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+   <!-- FLOATING BOTTOM NAV (Mobile Only) THE BIG 5 -->
+            <!-- FLOATING BOTTOM NAV (Mobile Only) - ANTI-HASH FIX -->
+            <nav class="d-md-none fixed-bottom floating-bottom-nav bg-white shadow-lg border-top">
+                <div class="d-flex justify-content-around p-1 flex-nowrap overflow-auto hide-scrollbar">
+                    <a href="javascript:void(0)" class="nav-item position-relative text-center text-decoration-none active-bottom menu-btn flex-fill py-1 rounded-pill" onclick="showPage('dashboard')">
+                        <i class="bi bi-grid-1x2-fill fs-5 d-block text-primary bouncy-hover"></i><span style="font-size: 0.6rem;" class="fw-bold">Dasbor</span>
+                    </a>
+                    <a href="javascript:void(0)" class="nav-item position-relative text-center text-decoration-none text-secondary menu-btn flex-fill py-1 rounded-pill" onclick="showPage('opname')">
+                        <i class="bi bi-safe fs-5 d-block bouncy-hover"></i><span style="font-size: 0.6rem;" class="fw-bold">Opname</span>
+                    </a>
+                    <a href="javascript:void(0)" class="nav-item position-relative text-center text-decoration-none text-secondary menu-btn flex-fill py-1 rounded-pill" onclick="showPage('pusatdata')">
+                        <i class="bi bi-server fs-5 d-block bouncy-hover"></i>
+                        <span class="position-absolute top-0 start-50 translate-middle badge rounded-circle bg-warning border border-2 border-white p-1 d-none pulse-animation" id="navBadgeUploadMobile" style="margin-left: 8px; margin-top: 5px;"><span class="visually-hidden">Alert</span></span>
+                        <span style="font-size: 0.6rem;" class="fw-bold">Data</span>
+                    </a>
+                    <a href="javascript:void(0)" class="nav-item position-relative text-center text-decoration-none text-secondary menu-btn flex-fill py-1 rounded-pill" onclick="showPage('analisa')">
+                        <i class="bi bi-search fs-5 d-block bouncy-hover"></i>
+                        <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-danger border border-2 border-white d-none" id="navBadgeAnalisaMobile" style="font-size: 0.5rem; margin-left: 10px; margin-top: 5px; padding: 2px 4px;">0</span>
+                        <span style="font-size: 0.6rem;" class="fw-bold">Analisa</span>
+                    </a>
+                    <a href="javascript:void(0)" class="nav-item position-relative text-center text-decoration-none text-secondary menu-btn flex-fill py-1 rounded-pill" onclick="showPage('arsip'); superApp.fetchUniversalData();">
+                        <i class="bi bi-archive-fill fs-5 d-block bouncy-hover"></i><span style="font-size: 0.6rem;" class="fw-bold">Arsip</span>
+                    </a>
+                </div>
+            </nav>
+
+    <!-- ALL MODALS -->
+    <!-- MODAL PENGATURAN (SYSTEM SETTINGS) -->
+    <!-- MODAL SYSTEM SETTINGS & KOP SURAT -->
+    <div class="modal fade" id="modal-system-settings" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4 border-0 shadow-lg bg-light">
+                <div class="modal-header bg-dark text-white border-0 py-3 rounded-top-4">
+                    <h6 class="modal-title fw-bold"><i class="bi bi-gear-fill me-2"></i> Pengaturan Sistem & Kop Surat</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 bg-secondary-subtle custom-scroll">
+                    
+                    <!-- UPLOAD LOGO KOP SURAT -->
+                    <div class="card bg-white border-0 shadow-sm rounded-4 mb-4 p-3 bouncy-hover">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3"><i class="bi bi-image text-primary me-2"></i> Logo Kop Surat BA</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6 text-center">
+                                <label class="small fw-bold text-muted mb-2">Logo Kiri (Bankaltimtara)</label>
+                                <div class="border border-primary-subtle rounded-3 p-2 bg-light mb-2 d-flex align-items-center justify-content-center" style="height: 90px;">
+                                    <img id="previewLogoKiri" src="" style="max-height: 70px; max-width: 100%; display: none;">
+                                    <span id="textLogoKiri" class="text-muted small"><i class="bi bi-cloud-arrow-up fs-4 d-block mb-1"></i>Pilih Logo Kiri</span>
+                                </div>
+                                <input type="file" id="uploadLogoKiri" class="form-control form-control-sm rounded-pill" accept="image/png, image/jpeg" onchange="previewLocalImage(this, 'previewLogoKiri', 'textLogoKiri')">
+                            </div>
+                            <div class="col-md-6 text-center">
+                                <label class="small fw-bold text-muted mb-2">Logo Kanan (BPD Bersama)</label>
+                                <div class="border border-primary-subtle rounded-3 p-2 bg-light mb-2 d-flex align-items-center justify-content-center" style="height: 90px;">
+                                    <img id="previewLogoKanan" src="" style="max-height: 70px; max-width: 100%; display: none;">
+                                    <span id="textLogoKanan" class="text-muted small"><i class="bi bi-cloud-arrow-up fs-4 d-block mb-1"></i>Pilih Logo Kanan</span>
+                                </div>
+                                <input type="file" id="uploadLogoKanan" class="form-control form-control-sm rounded-pill" accept="image/png, image/jpeg" onchange="previewLocalImage(this, 'previewLogoKanan', 'textLogoKanan')">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- IDENTITAS KANTOR -->
+                    <div class="card bg-white border-0 shadow-sm rounded-4 mb-4 p-3 bouncy-hover">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3"><i class="bi bi-building-fill text-primary me-2"></i> Identitas Kantor & Pimpinan</h6>
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="small fw-bold text-muted mb-1">Nama Cabang / KCP</label>
+                                <input type="text" id="cfgCabang" class="form-control rounded-pill bg-light border-0 fw-bold">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="small fw-bold text-muted mb-1">Alamat Lengkap & Kontak (Akan Muncul di Kop Surat)</label>
+                                <textarea id="cfgAlamat" class="form-control rounded-4 bg-light border-0 fw-bold" rows="3" placeholder="Jl. Propinsi No. 01...&#10;Telp: (0542)..."></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small fw-bold text-muted mb-1">Pimpinan / Penyelia</label>
+                                <input type="text" id="cfgPimpinan" class="form-control rounded-pill bg-light border-0 fw-bold">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small fw-bold text-muted mb-1">Admin Rekon / KCP</label>
+                                <input type="text" id="cfgAdmin" class="form-control rounded-pill bg-light border-0 fw-bold">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small fw-bold text-muted mb-1">Security / Petugas Keamanan</label>
+                                <input type="text" id="cfgSecurity" class="form-control rounded-pill bg-light border-0 fw-bold" placeholder="Nama Security">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PENANGGUNG JAWAB ATM -->
+                    <div class="card bg-white border-0 shadow-sm rounded-4 p-3 bouncy-hover" id="tellerConfigContainer">
+                        <!-- Di-generate otomatis dari JS -->
+                    </div>
+                </div>
+                
+                <!-- FOOTER DENGAN TOMBOL SIMPAN -->
+                <div class="modal-footer border-0 bg-white rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary rounded-pill fw-bold px-4 shadow-sm bouncy-hover" onclick="superApp.saveBAConfig()">
+                        <i class="bi bi-save me-1"></i> Simpan Pengaturan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DETAIL TRANSAKSI SELISIH -->
+    <div class="modal fade" id="detailSelisihModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
+                <div id="detailModalHeader" class="modal-header border-0 py-3 text-white">
+                    <h6 class="modal-title fw-bold"><i class="bi bi-search me-2"></i> Detail Investigasi</h6>
+                    <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 bg-light">
+                    <div class="text-center mb-3"><span id="detailJenisBadge" class="badge rounded-pill px-3 py-1 shadow-sm mb-2"></span><h3 id="detailNominal" class="fw-black text-dark mb-0">Rp 0</h3></div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6"><div class="bg-white p-2 rounded-4 shadow-sm text-center border"><span class="small text-muted fw-bold d-block mb-1" style="font-size: 0.7rem;">TANGGAL</span><span id="detailTanggal" class="fw-bold small">-</span></div></div>
+                        <div class="col-6"><div class="bg-white p-2 rounded-4 shadow-sm text-center border"><span class="small text-muted fw-bold d-block mb-1" style="font-size: 0.7rem;">ID MESIN</span><span id="detailAtm" class="fw-bold text-primary small">-</span></div></div>
+                        <div class="col-12"><div class="bg-white p-2 rounded-4 shadow-sm text-center border"><span class="small text-muted fw-bold d-block mb-1" style="font-size: 0.7rem;">RESI</span><span id="detailResi" class="fw-bold small">-</span></div></div>
+                    </div>
+                    <div class="alert alert-warning border-warning shadow-sm rounded-4 p-2 mb-2"><span class="fw-bold d-block small" style="font-size: 0.7rem;"><i class="bi bi-info-circle-fill me-1"></i> Kronologi:</span><span id="detailKeterangan" class="text-dark small" style="font-size: 0.8rem;"></span></div>
+                    <div class="alert bg-white border shadow-sm rounded-4 p-2 mb-0"><span class="fw-bold d-block text-primary small" style="font-size: 0.7rem;"><i class="bi bi-lightbulb-fill me-1"></i> Saran:</span><span id="detailSaran" class="text-secondary small" style="font-size: 0.75rem;"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PREVIEW UPLOAD -->
+    <div class="modal fade" id="previewModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
+                <div class="modal-header bg-gradient-playful text-white border-0 py-2">
+                    <h6 class="modal-title fw-bold"><i class="bi bi-eye me-1 text-warning"></i> Pratinjau <span id="previewType" class="text-warning"></span></h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0 bg-light">
+                    <div class="p-2 bg-white border-bottom d-flex justify-content-between align-items-center text-sm"><span class="small text-secondary fw-bold">Total: <strong id="previewCount" class="text-dark">0</strong> baris</span></div>
+                    <div class="table-responsive" style="max-height: 50vh;"><table class="table table-hover table-sm table-custom-compact align-middle mb-0 text-nowrap"><thead class="table-light sticky-top" id="previewTableHeader"></thead><tbody id="previewTableBody" class="bg-white"></tbody></table></div>
+                </div>
+                <div class="modal-footer bg-white border-0 py-2">
+                    <button type="button" class="btn btn-light btn-sm rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary btn-sm rounded-pill px-4 fw-bold shadow-sm" id="btnConfirmUpload"><i class="bi bi-cloud-arrow-up-fill"></i> Upload</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DETAIL RIWAYAT TRANSAKSI PER TANGGAL (INTERAKTIF) -->
+    <div class="modal fade" id="historyDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content rounded-5 border-0 shadow-lg">
+                <div class="modal-header bg-gradient-playful text-white border-0 py-3">
+                    <h6 class="modal-title fw-bold"><i class="bi bi-list-check me-2"></i> Rincian Transaksi: <span id="histDetailTitle"></span></h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0 bg-light">
+                    <div class="p-3 bg-white border-bottom d-flex justify-content-between align-items-center">
+                        <div class="position-relative w-50">
+                            <i class="bi bi-search position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
+                            <input type="text" id="histDetailSearch" class="form-control form-control-sm rounded-pill bg-light border-0 px-5" placeholder="Cari Resi atau ATM..." oninput="changePage('histDetail', 1); renderHistoryDetailTable();">
+                        </div>
+                        <span class="small text-muted fw-bold">Total: <span id="histDetailCount" class="text-dark">0</span> Transaksi</span>
+                    </div>
+                    <div class="table-responsive" style="max-height: 50vh;">
+                        <table class="table table-hover table-sm table-custom-compact align-middle mb-0 text-nowrap"><thead class="table-light sticky-top shadow-sm" id="histDetailThead"></thead><tbody id="histDetailTbody" class="bg-white"></tbody></table>
+                    </div>
+                    <div id="histDetailPagination"></div>
+                </div>
+                <div class="modal-footer bg-white border-0 py-2"><button type="button" class="btn btn-light btn-sm rounded-pill px-4 fw-bold shadow-sm bouncy-hover" data-bs-dismiss="modal">Tutup Rincian</button></div>
+            </div>
+        </div>
+    </div>
+
+   <!-- MODAL EKSEKUSI PENYELESAIAN (DIPERBARUI) -->
+    <div class="modal fade" id="resolveModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header bg-success text-white border-0 py-3 rounded-top-4">
+                    <h6 class="modal-title fw-bold"><i class="bi bi-check-circle-fill me-2"></i> Eksekusi Penyelesaian Selisih</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 bg-light">
+                    <div id="resolveInfoBox" class="p-3 bg-white border border-success-subtle rounded-4 shadow-sm mb-3"></div>
+                    
+                    <label class="small fw-bold text-muted mb-1">Tanggal Penyelesaian B/A <span class="text-danger">*</span></label>
+                    <input type="date" id="resTanggal" class="form-control rounded-pill border-0 shadow-sm mb-3 fw-bold text-secondary">
+
+                    <label class="small fw-bold text-muted mb-1">Alasan / Jurnal Penutup <span class="text-danger">*</span></label>
+                    <textarea id="resolveReason" class="form-control rounded-4 border-0 shadow-sm mb-3" rows="3" placeholder="Contoh: Telah di jurnal..."></textarea>
+                    
+                    <div class="row g-2">
+                        <div class="col-md-6"><label class="small fw-bold text-muted mb-1">Rekening Tujuan</label><input type="text" id="resRekening" class="form-control rounded-pill border-0 shadow-sm" placeholder="Nomor Rekening"></div>
+                        <div class="col-md-6"><label class="small fw-bold text-muted mb-1">Nama Nasabah</label><input type="text" id="resNama" class="form-control rounded-pill border-0 shadow-sm" placeholder="Nama Lengkap"></div>
+                        <div class="col-md-6"><label class="small fw-bold text-muted mb-1">Jenis Transaksi</label><input type="text" id="resTrx" class="form-control rounded-pill border-0 shadow-sm" value="Tarik Tunai On Us"></div>
+                        <div class="col-md-6"><label class="small fw-bold text-muted mb-1">Problem Mesin</label><input type="text" id="resProblem" class="form-control rounded-pill border-0 shadow-sm" value="Transaksi terdebet namun uang tidak keluar"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-white rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-success rounded-pill fw-bold px-4 shadow-sm bouncy-hover" onclick="submitResolve()"><i class="bi bi-save me-1"></i> Simpan Penyelesaian</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  <!-- ========================================================================= -->
+    <!-- MODAL CETAK B/A PENYELESAIAN (TABEL KEBAL BADAI - 1 HALAMAN RAPI)         -->
+    <!-- ========================================================================= -->
+    <!-- ========================================================================= -->
+    <!-- MODAL GENERATOR LAPORAN PIPELINE BULANAN (LANDSCAPE - PRINT READY)        -->
+    <!-- ========================================================================= -->
+    <div class="modal fade" id="pipelineModal" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+            <div class="modal-content rounded-0 border-0 shadow">
+                <div class="modal-header bg-dark text-white rounded-0 py-2 d-flex align-items-center">
+                    <h6 class="modal-title fw-bold mb-0"><i class="bi bi-file-earmark-bar-graph"></i> Generator Laporan Pipeline</h6>
+                    <div class="ms-auto d-flex align-items-center gap-3">
+                        <label class="small fw-bold mb-0">Pilih Bulan Rekap:</label>
+                        <input type="month" id="inputBulanPipeline" class="form-control form-control-sm rounded-pill border-0 fw-bold px-3" onchange="generatePipelineReport()">
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                </div>
+                <div class="modal-body p-3 p-md-4 bg-secondary-subtle d-flex justify-content-center custom-scroll">
+                    
+                    <!-- KERTAS A4 (Di-custom untuk Landscape menggunakan in-line CSS khusus) -->
+                    <div id="printPipelineArea" class="kertas-a4 shadow position-relative" style="max-width: 297mm; width: 100%; min-height: 210mm;">
+                        
+                        <!-- KOP SURAT TABEL KEBAL BADAI -->
+                        <table class="table table-borderless w-100 mb-3 border-bottom border-dark border-2 pb-2">
+                            <tr>
+                                <td width="15%" class="text-start align-middle px-0"><img id="cetakKop_logoKiri3" src="" style="max-height: 50px; max-width: 100%; display: none;"></td>
+                                <td width="70%" class="text-center align-middle px-0" style="line-height: 1.2;">
+                                    <strong style="color: #0070c0; font-size: 14px;">PT BANK PEMBANGUNAN DAERAH KALIMANTAN TIMUR DAN KALIMANTAN UTARA</strong><br>
+                                    <span id="pipe_cabang" class="fw-bold text-uppercase" style="font-size: 12px;">KANTOR CABANG PEMBANTU BABULU</span>
+                                </td>
+                                <td width="15%" class="text-end align-middle px-0"><img id="cetakKop_logoKanan3" src="" style="max-height: 50px; max-width: 100%; display: none;"></td>
+                            </tr>
+                        </table>
+
+                        <div class="text-center mb-4">
+                            <h5 class="fw-bolder mb-0 text-uppercase text-decoration-underline" style="font-size: 15px;">REKAPITULASI PIPELINE SELISIH ATM</h5>
+                            <h6 class="fw-bolder text-muted mb-0" style="font-size: 12px;">PERIODE BULAN: <span id="pipe_periode_text" class="text-dark">AGUSTUS 2026</span></h6>
+                        </div>
+
+                        <!-- EXECUTIVE SUMMARY DASHBOARD (DI DALAM KERTAS) -->
+                        <table class="table table-bordered border-dark table-sm text-center mb-4 w-100 mx-auto" style="font-size: 12px; background-color: #f8f9fa;">
+                            <tr>
+                                <td width="25%" class="align-middle py-2">
+                                    <span class="d-block text-muted fw-bold" style="font-size: 9px;">TOTAL KASUS ANOMALI</span>
+                                    <span class="fs-5 fw-black text-dark" id="pipe_sum_kasus">0</span>
+                                </td>
+                                <td width="25%" class="align-middle py-2">
+                                    <span class="d-block text-success fw-bold" style="font-size: 9px;">SELESAI DITUTUP (B/A)</span>
+                                    <span class="fs-5 fw-black text-success" id="pipe_sum_selesai">0</span>
+                                </td>
+                                <td width="25%" class="align-middle py-2">
+                                    <span class="d-block text-danger fw-bold" style="font-size: 9px;">KASUS MENGGANTUNG</span>
+                                    <span class="fs-5 fw-black text-danger" id="pipe_sum_gantung">0</span>
+                                </td>
+                                <td width="25%" class="align-middle py-2">
+                                    <span class="d-block text-muted fw-bold" style="font-size: 9px;">POTENSI NOMINAL GANTUNG</span>
+                                    <span class="fs-6 fw-black text-dark tabular-nums" id="pipe_sum_nominal">Rp 0</span>
+                                </td>
+                            </tr>
+                        </table>
+                        
+                        <!-- TABEL DETAIL DATA -->
+                        <table class="table table-bordered border-dark table-sm mb-4" style="font-size: 11px; line-height: 1.3;">
+                            <thead class="text-center align-middle" style="background-color: #e9ecef !important;">
+                                <tr>
+                                    <th width="3%">NO</th>
+                                    <th width="12%">TANGGAL TRX</th>
+                                    <th width="12%">ID MESIN ATM</th>
+                                    <th width="15%">NO. REFERENSI</th>
+                                    <th width="18%">NOMINAL SELISIH</th>
+                                    <th width="12%">STATUS</th>
+                                    <th width="28%">TINDAK LANJUT / B/A</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pipe_tbody">
+                                <!-- Data Di-Generate Otomatis oleh JS -->
+                            </tbody>
+                        </table>
+
+                        <!-- TANDA TANGAN -->
+                        <table class="table table-borderless w-100 mt-4 mb-0 text-center" style="font-size: 12px;">
+                            <tr>
+                                <td width="33%"></td><td width="34%"></td>
+                                <td width="33%" class="pb-2"><span id="pipe_kota"></span>, <span id="pipe_tgl_cetak"></span></td>
+                            </tr>
+                            <tr><td colspan="2" class="fw-bold pb-5">TIM SKO ATM</td><td class="fw-bold pb-5">Mengetahui,</td></tr>
+                            <tr class="align-bottom">
+                                <td class="pt-4"><p class="fw-bold text-decoration-underline mb-0" id="pipe_teller"></p><p class="mb-0">Teller</p></td>
+                                <td class="pt-4"><p class="fw-bold text-decoration-underline mb-0" id="pipe_admin"></p><p class="mb-0">Staff Administrasi Capem</p></td>
+                                <td class="pt-4"><p class="fw-bold text-decoration-underline mb-0" id="pipe_pimpinan"></p><p class="mb-0">Pemimpin</p></td>
+                            </tr>
+                        </table>
+
+                    </div>
+                </div>
+                <div class="modal-footer rounded-0 py-2">
+                    <button class="btn btn-outline-primary fw-bold shadow-sm bouncy-hover" onclick="exportHTMLToDoc('printPipelineArea', 'Laporan_Pipeline')"><i class="bi bi-file-word-fill"></i> Download DOCX</button>
+                    <button class="btn btn-danger fw-bold shadow-sm bouncy-hover" onclick="cetakPDF('printPipelineArea', event)"><i class="bi bi-printer-fill"></i> Cetak A4 Landscape</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="beritaAcaraModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content rounded-0 border-0 shadow">
+                <div class="modal-header bg-dark text-white rounded-0 py-2">
+                    <h6 class="modal-title fw-bold"><i class="bi bi-printer"></i> Pratinjau BA Penyelesaian</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3 p-md-4 bg-secondary-subtle d-flex justify-content-center custom-scroll">
+                    
+                    <div id="printBAPenyelesaianArea" class="kertas-a4 shadow position-relative">
+                        
+                        <!-- KOP SURAT (MENGGUNAKAN TABEL) -->
+                        <table class="table table-borderless w-100 mb-3 border-bottom border-dark border-2 pb-2">
+                            <tr>
+                                <td width="20%" class="text-start align-middle px-0">
+                                    <img id="cetakKop_logoKiri1" src="" style="max-height: 55px; max-width: 100%; display: none;">
+                                </td>
+                                <td width="60%" class="text-center align-middle px-0" style="line-height: 1.2;">
+                                    <strong style="color: #0070c0; font-size: 13px;">PT BANK PEMBANGUNAN DAERAH</strong><br>
+                                    <strong style="color: #0070c0; font-size: 13px;">KALIMANTAN TIMUR DAN KALIMANTAN UTARA</strong><br>
+                                    <span id="cetak_cabang" class="fw-bold" style="font-size: 12px;">KANTOR CABANG...</span><br>
+                                    <span id="cetak_alamat" style="font-size: 11px; white-space: pre-wrap;">Jl. Propinsi No. 01...</span><br>
+                                    <span style="font-size: 11px;">www.bankaltimtara.co.id</span>
+                                </td>
+                                <td width="20%" class="text-end align-middle px-0">
+                                    <img id="cetakKop_logoKanan1" src="" style="max-height: 55px; max-width: 100%; display: none;">
+                                </td>
+                            </tr>
+                        </table>
+                        
+                        <div class="text-center mb-3">
+                            <h5 class="fw-bolder text-decoration-underline mb-0">BERITA ACARA</h5>
+                            <h6 class="fw-bolder mb-0">PENYELESAIAN SELISIH ATM</h6>
+                            <h6 class="fw-bolder" id="cetak_atm_judul"></h6>
+                        </div>
+                        
+                        <p style="text-align: justify; font-size: 13.5px; line-height: 1.4;" class="mb-2">Pada hari ini <b id="cetak_hari"></b> Tanggal <b id="cetak_tgl"></b> telah dilakukan penyelesaian selisih pada mesin ATM <b id="cetak_atm"></b>, dengan nominal sebesar <b><span id="cetak_nominal"></span>.-</b> Dari hasil pemeriksaan Electronic Journal terdapat transaksi gagal dengan data sebagai berikut:</p>
+                        
+                        <table class="table table-borderless table-sm mb-2 ms-2 w-75" style="font-size: 13.5px; line-height: 1.2;">
+                            <tr><td width="25%" class="py-1">No. Rekening</td><td width="1%" class="py-1 text-center">:</td><td id="cetak_rek" class="fw-bold py-1 ps-2"></td></tr>
+                            <tr><td class="py-1">Nama</td><td class="py-1 text-center">:</td><td id="cetak_nama" class="fw-bold py-1 ps-2"></td></tr>
+                            <tr><td class="py-1">No. Referensi</td><td class="py-1 text-center">:</td><td id="cetak_resi" class="fw-bold py-1 ps-2"></td></tr>
+                            <tr><td class="py-1">Transaksi</td><td class="py-1 text-center">:</td><td id="cetak_trx" class="py-1 ps-2"></td></tr>
+                            <tr><td class="py-1">Problem</td><td class="py-1 text-center">:</td><td id="cetak_problem" class="py-1 ps-2"></td></tr>
+                        </table>
+                        
+                        <p style="text-align: justify; font-size: 13.5px;" class="mb-2"><b>Keterangan:</b> <span id="cetak_keterangan"></span></p>
+                        <p style="text-align: justify; font-size: 13.5px;" class="mb-2 mt-2"><b>Penyelesaian:</b> Dilakukan jurnal sebagai berikut:</p>
+                        
+                        <table class="table table-bordered table-sm text-center border-dark mb-2 align-middle" style="font-size: 12.5px;">
+                            <thead class="fw-bold"><tr><th>Debet</th><th>Kredit</th><th class="text-nowrap" width="20%">Nominal</th><th>Keterangan</th></tr></thead>
+                            <tbody><tr><td>1299000105<br><small>KWJBN SGR-ATM DLM PENYELESAIAN</small></td><td><span id="cetak_kredit_rek"></span><br><small id="cetak_kredit_nama"></small></td><td class="fw-bold text-nowrap" id="cetak_jurnal_nom"></td><td id="cetak_jurnal_ket"></td></tr></tbody>
+                        </table>
+                        
+                        <p style="text-align: justify; font-size: 13.5px;" class="mb-3">Demikian berita acara ini kami sampaikan, untuk dapat diproses lebih lanjut oleh unit terkait. Atas perhatian dan kerjasamanya disampaikan terima kasih.</p>
+                        
+                        <!-- AREA TANDA TANGAN (MENGGUNAKAN TABEL) -->
+                        <table class="table table-borderless w-100 mt-3 mb-0 text-center" style="font-size: 13px;">
+                            <tr>
+                                <td width="33%"></td>
+                                <td width="34%"></td>
+                                <td width="33%" class="pb-2"><span id="cetak_kota"></span>, <span id="cetak_tgl_ttd"></span></td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="fw-bold pb-5">TIM SKO ATM</td>
+                                <td class="fw-bold pb-5">Mengetahui,</td>
+                            </tr>
+                            <tr class="align-bottom">
+                                <td class="pt-4">
+                                    <p class="fw-bold text-decoration-underline mb-0" id="cetak_teller"></p>
+                                    <p class="mb-0">Teller</p>
+                                </td>
+                                <td class="pt-4">
+                                    <p class="fw-bold text-decoration-underline mb-0" id="cetak_admin"></p>
+                                    <p class="mb-0">Staff Administrasi Capem</p>
+                                </td>
+                                <td class="pt-4">
+                                    <p class="fw-bold text-decoration-underline mb-0" id="cetak_pimpinan"></p>
+                                    <p class="mb-0">Pemimpin</p>
+                                </td>
+                            </tr>
+                        </table>
+                        
+                        <!-- QR CODE Absolute -->
+                        <div class="position-absolute" style="bottom: 15mm; left: 20mm; text-align: left;">
+                            <img id="qrBAPenyelesaian" src="" width="65" class="border p-1 rounded-2 shadow-sm bg-white">
+                            <p class="text-muted mt-1 mb-0 fw-bold" style="font-size: 9px;">Scan e-Document</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer rounded-0 py-2">
+                    <button class="btn btn-outline-primary fw-bold shadow-sm bouncy-hover" onclick="exportHTMLToDoc('printBAPenyelesaianArea', 'BA_Penyelesaian')"><i class="bi bi-file-word-fill"></i> Download DOCX</button>
+                    <button class="btn btn-success fw-bold shadow-sm bouncy-hover" onclick="cetakPDF('printBAPenyelesaianArea', event)"><i class="bi bi-printer-fill"></i> Cetak A4</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL CETAK B/A OPNAME FISIK (TABEL KEBAL BADAI - 1 HALAMAN RAPI)         -->
+    <!-- ========================================================================= -->
+    <div class="modal fade" id="baOpnameModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content rounded-0 border-0 shadow">
+                <div class="modal-header bg-dark text-white rounded-0 py-2">
+                    <h6 class="modal-title fw-bold"><i class="bi bi-printer"></i> Pratinjau BA Opname Fisik</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3 p-md-4 bg-secondary-subtle d-flex justify-content-center custom-scroll">
+                    
+                    <div id="printBAOpnameArea" class="kertas-a4 shadow position-relative">
+                        
+                        <!-- KOP SURAT -->
+                        <table class="table table-borderless w-100 mb-3 border-bottom border-dark border-2 pb-2">
+                            <tr>
+                                <td width="20%" class="text-start align-middle px-0">
+                                    <img id="cetakKop_logoKiri2" src="" style="max-height: 55px; max-width: 100%; display: none;">
+                                </td>
+                                <td width="60%" class="text-center align-middle px-0" style="line-height: 1.2;">
+                                    <strong style="color: #0070c0; font-size: 13px;">PT BANK PEMBANGUNAN DAERAH</strong><br>
+                                    <strong style="color: #0070c0; font-size: 13px;">KALIMANTAN TIMUR DAN KALIMANTAN UTARA</strong><br>
+                                    <span id="cetakOp_cabang_header" class="fw-bold" style="font-size: 12px;">KANTOR CABANG PEMBANTU BABULU</span>
+                                </td>
+                                <td width="20%" class="text-end align-middle px-0">
+                                    <img id="cetakKop_logoKanan2" src="" style="max-height: 55px; max-width: 100%; display: none;">
+                                </td>
+                            </tr>
+                        </table>
+
+                        <div class="text-center mb-3">
+                            <h5 class="fw-bolder mb-0 text-uppercase text-decoration-underline" style="font-size: 14px;">BERITA ACARA PENGISIAN ATM</h5>
+                        </div>
+                        
+                        <p style="text-align: justify; font-size: 13px;" class="mb-2">Pada hari ini <b id="cetakHari">...</b> tanggal <b id="cetakTgl">...</b> jam <b id="cetakJam">...</b> WITA bahwa telah dilakukan pengisian kas ATM (Cash Opname) pada mesin atm PT Bank Pembangunan Kalimantan Timur Dan Kalimantan Utara <span id="cetakOp_cabang_text">...</span> dengan ATM ID <b id="cetakAtm">...</b> dengan rincian sebagai berikut :</p>
+
+                        <!-- TABEL RINCIAN ANTI-LIPAT -->
+                        <table class="table table-borderless table-sm w-100 mb-2" style="font-size: 13px; line-height: 1.3;">
+                            <tr>
+                                <td width="3%" class="pe-1 py-1">1.</td>
+                                <td class="px-1 py-1">Saldo Kas Sebelum Pengisian (System Core)</td>
+                                <td style="width: 1%; white-space: nowrap;" class="px-1 py-1 text-end">: Rp</td>
+                                <td style="width: 25%; white-space: nowrap;" id="cetakSysSebelum" class="text-end ps-1 py-1 fw-bold">0</td>
+                            </tr>
+                            <tr>
+                                <td class="pe-1 py-1">2.</td>
+                                <td class="px-1 py-1">Saldo Kas Yang Ditambahkan (System Core)</td>
+                                <td style="width: 1%; white-space: nowrap;" class="px-1 py-1 text-end">: Rp</td>
+                                <td style="width: 25%; white-space: nowrap;" id="cetakSysTambah" class="text-end ps-1 py-1 fw-bold">0</td>
+                            </tr>
+                            <tr>
+                                <td class="pe-1 py-1">3.</td>
+                                <td class="px-1 py-1">Saldo Kas Setelah Penambahan (System Core)</td>
+                                <td style="width: 1%; white-space: nowrap;" class="px-1 py-1 text-end">: Rp</td>
+                                <td style="width: 25%; white-space: nowrap;" id="cetakSysTotal" class="text-end ps-1 py-1 fw-bold">0</td>
+                            </tr>
+                            <tr>
+                                <td class="pe-1 py-1">4.</td>
+                                <td class="px-1 py-1">Saldo Kas Menurut Jumlah Fisik</td>
+                                <td style="width: 1%; white-space: nowrap;" class="px-1 py-1 text-end">: Rp</td>
+                                <td style="width: 25%; white-space: nowrap;" id="cetakFisik" class="text-end ps-1 py-1 fw-bold">0</td>
+                            </tr>
+                            <tr>
+                                <td class="pe-1 py-1">5.</td>
+                                <td class="px-1 py-1">Selisih Kurang Saldo Kas</td>
+                                <td style="width: 1%; white-space: nowrap;" class="px-1 py-1 text-end">: Rp</td>
+                                <td style="width: 25%; white-space: nowrap;" id="cetakKurang" class="text-end ps-1 py-1 fw-bold">0</td>
+                            </tr>
+                            <tr>
+                                <td class="pe-1 py-1">6.</td>
+                                <td class="px-1 py-1">Selisih Lebih</td>
+                                <td style="width: 1%; white-space: nowrap;" class="px-1 py-1 text-end">: Rp</td>
+                                <td style="width: 25%; white-space: nowrap;" id="cetakLebih" class="text-end ps-1 py-1 fw-bold">0</td>
+                            </tr>
+                        </table>
+
+                        <p style="text-align: justify; font-size: 13px;" class="mb-1">Sebagai lampiran kami sampaikan struk jurnal mesin atm sebelum dan setelah dilakukan pengisian selain itu kami telah melakukan pemeriksaan terhadap mesin atm tersebut, dimana <b>TIDAK TERDAPAT ATM yang tertahan</b>.</p>
+                        <p style="text-align: justify; font-size: 13px;" class="mb-3">Demikian berita acara ini dibuat sesuai dengan keadaan yang sebenarnya.</p>
+
+                        <!-- KOP PENGANTAR TANDA TANGAN -->
+                        <div class="text-center mb-3" style="font-size: 12px; line-height: 1.2;">
+                            <strong style="color: #0070c0;">PT BANK PEMBANGUNAN DAERAH</strong><br>
+                            <strong style="color: #0070c0;">KALIMANTAN TIMUR DAN KALIMANTAN UTARA</strong><br>
+                            <span id="cetakOp_cabang_sub" class="fw-bold">KANTOR CABANG PEMBANTU BABULU</span>
+                        </div>
+
+                        <p class="fw-bold mb-0" style="font-size: 12px;">Petugas Pelaksana :</p>
+
+                        <!-- TANDA TANGAN BERJENJANG (MENGGUNAKAN TABEL) -->
+                        <table class="table table-borderless w-100 mt-2 mb-0" style="font-size: 12px; line-height: 1.4;">
+                            <tr>
+                                <td width="50%" class="pb-3 px-0">
+                                    <p class="mb-0 fw-bold">1. <span id="cetakOp_petugasTellerName">SUCI AINUL FITRI</span></p>
+                                    <p class="mb-4 text-uppercase text-muted" style="font-size: 85%;">JABATAN : TELLER</p>
+                                    <p class="mb-0 text-secondary border-bottom border-dark border-1 d-inline-block" style="width: 85%;">Tanda Tangan</p>
+                                </td>
+                                <td width="50%" class="pb-3 px-0">
+                                    <p class="mb-0 fw-bold">2. <span id="cetakOp_petugasAdminName">FISTRI ARIANDINI</span></p>
+                                    <p class="mb-4 text-uppercase text-muted" style="font-size: 85%;">JABATAN : STAF ADMINISTRASI CABANG</p>
+                                    <p class="mb-0 text-secondary border-bottom border-dark border-1 d-inline-block" style="width: 85%;">Tanda Tangan</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="pb-3 px-0">
+                                    <p class="mb-0 fw-bold">3. <span id="cetakOp_petugasSecurityName">DADAN</span></p>
+                                    <p class="mb-4 text-uppercase text-muted" style="font-size: 85%;">JABATAN : SECURITY</p>
+                                    <p class="mb-0 text-secondary border-bottom border-dark border-1 d-inline-block" style="width: 85%;">Tanda Tangan</p>
+                                </td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="text-center pt-2 pb-2 px-0">
+                                    <p class="mb-5 pb-4 fw-bold">Mengetahui,</p>
+                                    <p class="fw-bold text-decoration-underline mb-0" id="cetakOp_pimpinanName">ENDY PRATAMA</p>
+                                    <p class="mb-0" id="cetakOp_pimpinanJabatan">Pemimpin Capem</p>
+                                </td>
+                            </tr>
+                        </table>
+                        
+                        <!-- QR Code Absolute -->
+                        <div class="position-absolute" style="bottom: 15mm; left: 20mm; text-align: left;">
+                            <img id="qrBAOpname" src="" width="65" class="border p-1 rounded-2 shadow-sm bg-white">
+                            <p class="text-muted mt-1 mb-0 fw-bold" style="font-size: 9px;">Scan e-Document</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer rounded-0 py-2">
+                    <button class="btn btn-outline-primary fw-bold shadow-sm bouncy-hover" onclick="exportHTMLToDoc('printBAOpnameArea', 'BA_Opname_Fisik')"><i class="bi bi-file-word-fill"></i> Download DOCX</button>
+                    <button class="btn btn-success fw-bold shadow-sm bouncy-hover" onclick="cetakPDF('printBAOpnameArea', event)"><i class="bi bi-printer-fill"></i> Cetak A4</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CETAK LAPORAN REKENING GANTUNG -->
+    <div class="modal fade" id="laporanModal" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+            <div class="modal-content rounded-0 border-0 shadow">
+                <div class="modal-header bg-dark text-white rounded-0 py-2">
+                    <h6 class="modal-title fw-bold"><i class="bi bi-file-earmark-pdf"></i> Laporan Selisih ATM (Buku Besar)</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0 bg-secondary-subtle d-flex justify-content-center custom-scroll">
+                    
+                    <!-- KERTAS A4 LANDSCAPE -->
+                    <div id="printLaporanArea" class="bg-white text-dark shadow-sm my-4" style="width: 297mm; min-height: 210mm; padding: 15mm 15mm; font-family: 'Arial', sans-serif;">
+                        
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="fw-bold mb-1">Periode: <span id="lap_periode" class="text-uppercase"></span></h6>
+                                <h6 class="fw-bold mb-0">KWJBN SGR-ATM DLM PENYELESAIAN: 1299000105</h6>
+                            </div>
+                            <div class="text-end">
+                                <h5 class="fw-bolder mb-0 text-uppercase text-decoration-underline" id="lap_judul_atas">LAPORAN SELISIH ATM</h5>
+                            </div>
+                        </div>
+                        
+                        <table class="table table-bordered border-dark table-sm align-middle" style="font-size: 11px;">
+                            <thead class="text-center align-middle fw-bold">
+                                <tr>
+                                    <th width="3%">NO</th>
+                                    <th width="15%">TANGGAL CASH OPNAME / PENY. SELISIH ATM</th>
+                                    <th width="8%">NOMOR REFERENSI</th>
+                                    <th width="6%">ID ATM</th>
+                                    <th width="9%">KREDIT (Rp)</th>
+                                    <th width="9%">DEBET (Rp)</th>
+                                    <th width="10%">SALDO (Rp)</th>
+                                    <th width="20%">KETERANGAN</th>
+                                    <th width="10%">SALDO ATM DALAM PENCARIAN</th>
+                                    <th width="10%">SALDO OFF US BELUM DITARIK KANPUS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lap_tbody">
+                                <!-- Data Di-Generate oleh JS -->
+                            </tbody>
+                        </table>
+
+                        <div class="row text-center mt-5 pt-4" style="font-size: 12px;">
+                            <div class="col-8"></div>
+                            <div class="col-4">
+                                <p class="mb-5 pb-4"><span id="lap_kota">Babulu</span>, <span id="lap_tgl_cetak">Agustus 2026</span><br>PT BANK PEMBANGUNAN DAERAH<br>KALIMANTAN TIMUR DAN KALIMANTAN UTARA<br><span class="text-uppercase fw-bold" id="lap_cabang_bawah">CABANG PEMBANTU BABULU</span></p>
+                                <p class="fw-bold text-decoration-underline mb-0" id="lap_pimpinan">ENDY PRATAMA</p>
+                                <p>Pemimpin</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer rounded-0 py-2">
+                    <button class="btn btn-success fw-bold shadow-sm bouncy-hover" onclick="superApp.printLaporan()"><i class="bi bi-printer-fill"></i> Cetak PDF (Landscape)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- SMART ONBOARDING WIZARD MODAL -->
+    <div class="modal fade" id="onboardingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+                <div class="modal-body p-0">
+                    <div class="p-5 text-center">
+                        
+                        <!-- Step 1: Welcome -->
+                        <div class="onboarding-step active" id="step1">
+                            <div class="onboarding-icon-wrapper bg-primary-subtle text-primary shadow-inner mb-4">
+                                <i class="bi bi-rocket-takeoff-fill" style="animation: bounce 2s infinite;"></i>
+                            </div>
+                            <h4 class="fw-black text-dark mb-3">Selamat Datang di 129ATM</h4>
+                            <p class="text-muted small fw-medium" style="line-height: 1.6;">Sistem Rekonsiliasi Pintar yang akan mengubah cara Anda mengelola selisih kas ATM. Mari ikuti tur singkat ini untuk memahami alur kerja aplikasi.</p>
+                        </div>
+                        
+                        <!-- Step 2: Upload -->
+                        <div class="onboarding-step" id="step2">
+                            <div class="onboarding-icon-wrapper bg-info-subtle text-info shadow-inner mb-4">
+                                <i class="bi bi-cloud-arrow-up-fill"></i>
+                            </div>
+                            <h4 class="fw-black text-dark mb-3">1. Upload Cerdas</h4>
+                            <p class="text-muted small fw-medium" style="line-height: 1.6;">Tarik dan lepas (<i>Drag & Drop</i>) seluruh file GL dan EJ sekaligus. Sistem dilengkapi tameng pelindung yang akan menolak file jika Anda tidak sengaja menukarnya.</p>
+                        </div>
+
+                        <!-- Step 3: Analisa AI -->
+                        <div class="onboarding-step" id="step3">
+                            <div class="onboarding-icon-wrapper bg-warning-subtle text-warning shadow-inner mb-4">
+                                <i class="bi bi-robot"></i>
+                            </div>
+                            <h4 class="fw-black text-dark mb-3">2. Analisa Kecerdasan Buatan</h4>
+                            <p class="text-muted small fw-medium" style="line-height: 1.6;">Sistem otomatis menyisir ribuan data lintas bulan, menemukan anomali (selisih), dan merekomendasikan Berita Acara Opname mana yang bisa digunakan sebagai kompensasi.</p>
+                        </div>
+
+                        <!-- Step 4: Opname & B/A -->
+                        <div class="onboarding-step" id="step4">
+                            <div class="onboarding-icon-wrapper bg-success-subtle text-success shadow-inner mb-4">
+                                <i class="bi bi-safe-fill"></i>
+                            </div>
+                            <h4 class="fw-black text-dark mb-3">3. Opname & Cetak B/A</h4>
+                            <p class="text-muted small fw-medium" style="line-height: 1.6;">Gunakan kalkulator visual untuk menghitung uang laci. Setelah selisih klop, Anda bisa mencetak Berita Acara PDF yang rapi hanya dengan satu kali klik.</p>
+                        </div>
+
+                        <!-- Step 5: Arsip -->
+                        <div class="onboarding-step" id="step5">
+                            <div class="onboarding-icon-wrapper bg-dark-subtle text-dark shadow-inner mb-4">
+                                <i class="bi bi-diagram-3-fill"></i>
+                            </div>
+                            <h4 class="fw-black text-dark mb-3">4. Arsip Universal</h4>
+                            <p class="text-muted small fw-medium" style="line-height: 1.6;">Pantau kesehatan rekonsiliasi dari menu Dasbor, atau buka Arsip Universal untuk menelusuri <i>Audit Trail</i> (Rekam Jejak) seluruh kasus dari awal tahun!</p>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light d-flex justify-content-between align-items-center px-4 py-3">
+                    <button class="btn btn-link text-muted fw-bold text-decoration-none small" onclick="superApp.closeOnboarding()">Lewati</button>
+                    <div id="onboardingIndicators">
+                        <span class="step-indicator active"></span>
+                        <span class="step-indicator"></span>
+                        <span class="step-indicator"></span>
+                        <span class="step-indicator"></span>
+                        <span class="step-indicator"></span>
+                    </div>
+                    <button class="btn btn-primary rounded-pill fw-bold px-4 shadow-sm bouncy-hover" id="btnNextOnboarding" onclick="superApp.nextOnboardingStep()">Selanjutnya <i class="bi bi-arrow-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
