@@ -1295,9 +1295,9 @@ function updateDataCompletenessBanner() {
     let glMap = new Map(); 
     (databaseData.gl || []).forEach(r => { 
         let atm = String(r[2]).trim().toUpperCase();
-        if (atm && atm !== 'ATM') {
+        // FILTER: Mengabaikan baris kosong, header 'ATM', dan data 'UNKNOWN'
+        if (atm && atm !== 'ATM' && atm !== 'UNKNOWN') {
             let d = new Date(String(r[1]).substring(0,10) + "T00:00:00").getTime();
-            // Pengaman ekstra: Pastikan tanggal valid (bukan baris kosong/NaN)
             if (!isNaN(d)) {
                 if (!glMap.has(atm) || d > glMap.get(atm)) glMap.set(atm, d);
             }
@@ -1307,7 +1307,8 @@ function updateDataCompletenessBanner() {
     let ejMap = new Map(); 
     (databaseData.ej || []).forEach(r => { 
         let atm = String(r[2]).trim().toUpperCase();
-        if (atm && atm !== 'ATM') {
+        // FILTER: Mengabaikan baris kosong, header 'ATM', dan data 'UNKNOWN'
+        if (atm && atm !== 'ATM' && atm !== 'UNKNOWN') {
             let d = new Date(String(r[1]).substring(0,10) + "T00:00:00").getTime();
             if (!isNaN(d)) {
                 if (!ejMap.has(atm) || d > ejMap.get(atm)) ejMap.set(atm, d);
@@ -1344,22 +1345,22 @@ function updateDataCompletenessBanner() {
         bannerHtml = `
             <div class="alert bg-warning-subtle border-0 text-dark py-3 px-4 rounded-4 shadow-sm mb-3 bouncy-hover">
                 <div class="d-flex align-items-center mb-2">
-                    <i class="bi bi-exclamation-triangle-fill text-warning fs-5 me-2"></i>
-                    <h6 class="fw-bold text-dark mb-0">Asisten Rekomendasi Upload</h6>
+                    <i class="bi bi-lightbulb-fill text-warning fs-5 me-2 pulse-animation"></i>
+                    <h6 class="fw-bold text-dark mb-0">Rekomendasi Pemutakhiran Data</h6>
                 </div>
-                <p class="mb-2 small">Sistem mendeteksi ketidakseimbangan data pada database bulan ini. Agar analisa selisih maksimal, mohon lengkapi:</p>
+                <p class="mb-2 small">Sistem mendeteksi adanya celah kelengkapan data operasional pada periode ini. Agar hasil pencocokan (rekonsiliasi) AI berjalan presisi 100%, mohon lengkapi arsip berikut:</p>
                 <ul class="mb-0 small fw-bold text-danger">`;
                 
-        if (missingEJ.length > 0) bannerHtml += `<li>Belum ada data <span class="badge bg-success rounded-pill px-2">EJ</span> sama sekali untuk mesin: <b>${missingEJ.join(', ')}</b></li>`;
-        if (missingGL.length > 0) bannerHtml += `<li class="mt-1">Belum ada data <span class="badge bg-primary rounded-pill px-2">GL</span> sama sekali untuk mesin: <b>${missingGL.join(', ')}</b></li>`;
-        if (laggingEJ.length > 0) bannerHtml += `<li class="mt-1">Data <span class="badge bg-success rounded-pill px-2">EJ</span> butuh diupdate untuk mesin: <span class="text-dark fw-medium">${laggingEJ.join(', ')}</span></li>`;
-        if (laggingGL.length > 0) bannerHtml += `<li class="mt-1">Data <span class="badge bg-primary rounded-pill px-2">GL</span> butuh diupdate untuk mesin: <span class="text-dark fw-medium">${laggingGL.join(', ')}</span></li>`;
+        if (missingEJ.length > 0) bannerHtml += `<li>Data <span class="badge bg-success rounded-pill px-2">EJ</span> Belum Tersedia untuk mesin: <span class="text-dark fw-black">${missingEJ.join(', ')}</span></li>`;
+        if (missingGL.length > 0) bannerHtml += `<li class="mt-1">Data <span class="badge bg-primary rounded-pill px-2">GL</span> Belum Tersedia untuk mesin: <span class="text-dark fw-black">${missingGL.join(', ')}</span></li>`;
+        if (laggingEJ.length > 0) bannerHtml += `<li class="mt-1">Data <span class="badge bg-success rounded-pill px-2">EJ</span> Perlu Diperbarui untuk mesin: <span class="text-dark fw-medium">${laggingEJ.join(', ')}</span></li>`;
+        if (laggingGL.length > 0) bannerHtml += `<li class="mt-1">Data <span class="badge bg-primary rounded-pill px-2">GL</span> Perlu Diperbarui untuk mesin: <span class="text-dark fw-medium">${laggingGL.join(', ')}</span></li>`;
+        
         bannerHtml += `</ul></div>`;
     }
     
     document.querySelectorAll('.data-completeness-banner').forEach(el => el.innerHTML = bannerHtml);
 }
-
 
 // ==========================================
 // 9. ENGINE BUKU BESAR (LAPORAN REKENING GANTUNG)
