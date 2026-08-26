@@ -387,6 +387,11 @@ async function processEJ() {
     showProgressAlert('Membaca File EJ...', 'Sedang merakit jurnal mesin...');
     let processedFiles = 0;
 
+    // [PERBAIKAN 1]: Kamus Pemetaan ID Mesin (Bisa ditambah jika ada kasus serupa)
+    const atmIdMap = {
+        "346": "KTM12902"
+    };
+
     for (let file of files) {
         let text = await readFileAsText(file);
         
@@ -412,7 +417,11 @@ async function processEJ() {
                     } else currentTx.status = "NON-FINANSIAL";
                 }
                 if (!currentTx.nominal) currentTx.nominal = 0;
-                let finalAtmId = currentTx.atm; if (!finalAtmId || /^\d+$/.test(finalAtmId)) finalAtmId = lastValidAtmId;
+                
+                // [PERBAIKAN 2]: Hapus penolakan mutlak terhadap angka murni jika sudah divalidasi panjangnya
+                let finalAtmId = currentTx.atm; 
+                if (!finalAtmId || finalAtmId === 'UNKNOWN') finalAtmId = lastValidAtmId;
+                
                 ejData.push([currentTx.tanggal, finalAtmId, currentTx.noResi, currentTx.nominal, currentTx.status]);
             }
             currentTx = {}; isLookingForJumlah = false;
@@ -425,8 +434,21 @@ async function processEJ() {
             
             const dateMatch = line.match(/^(\d{2})\/(\d{2})\/(\d{2})\s+(\d{2}:\d{2}:\d{2})\s+([A-Z0-9]+)/);
             if (dateMatch) { 
-                currentTx.tanggal = `20${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`; lastValidDate = currentTx.tanggal; 
-                let tempAtm = dateMatch[5]; if (/[A-Z]/i.test(tempAtm)) lastValidAtmId = tempAtm; currentTx.atm = lastValidAtmId; 
+                currentTx.tanggal = `20${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`; 
+                lastValidDate = currentTx.tanggal; 
+                
+                let tempAtm = dateMatch[5]; 
+                
+                // [PERBAIKAN 3]: Cek apakah ID ada di Kamus Pemetaan
+                if (atmIdMap[tempAtm]) {
+                    tempAtm = atmIdMap[tempAtm];
+                }
+                
+                // [PERBAIKAN 4]: Terima ID jika ada huruf, ATAU jika angka tapi panjangnya minimal 3 digit
+                if (/[A-Z]/i.test(tempAtm) || tempAtm.length >= 3) {
+                    lastValidAtmId = tempAtm; 
+                }
+                currentTx.atm = lastValidAtmId; 
             }
             
             const resiMatch = line.match(/(?:NO\s+RESI|NO\s+REF\.?|REFF\s+NO)\s*:?\s*(\d+)/i);
