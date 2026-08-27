@@ -819,7 +819,7 @@ function previewBAOpname() {
     // 4 Penanda Tangan Resmi
     safeSet('cetakOp_petugasTellerName', globalConfig['cfgTeller_' + atmId.toUpperCase()] || 'SUCI AINUL FITRI');
     safeSet('cetakOp_petugasAdminName', globalConfig.cfgAdmin || 'FISTRI ARIANDINI');
-   // --- GANTI BAGIAN SECURITY MENJADI INI ---
+    
     let inputSecurity = document.getElementById('opSecurityName') ? document.getElementById('opSecurityName').value.trim() : '';
     safeSet('cetakOp_petugasSecurityName', inputSecurity || globalConfig.cfgSecurity || 'DADAN');
     safeSet('cetakOp_pimpinanName', globalConfig.cfgPimpinan || 'ENDY PRATAMA');
@@ -832,7 +832,10 @@ function previewBAOpname() {
     
     safeSet('cetakSysSebelum', formatNum(sSblm)); 
     safeSet('cetakSysTambah', formatNum(sTmbh)); 
-    safeSet('cetakSysTotal', formatNum(sSblm + sTmbh)); 
+    
+    // [PERBAIKAN]: Saldo Setelah Penambahan kini sama dengan Saldo Yang Ditambahkan (Tidak lagi sSblm + sTmbh)
+    safeSet('cetakSysTotal', formatNum(sTmbh)); 
+    
     safeSet('cetakFisik', formatNum(fisik)); 
     safeSet('cetakKurang', formatNum(selisih < 0 ? Math.abs(selisih) : 0)); 
     safeSet('cetakLebih', formatNum(selisih > 0 ? selisih : 0));
@@ -877,7 +880,10 @@ function printRiwayatBAOpname(rawStr) {
     
     safeSet('cetakSysSebelum', formatNum(sSblm)); 
     safeSet('cetakSysTambah', formatNum(sTmbh)); 
-    safeSet('cetakSysTotal', formatNum(sSblm + sTmbh)); 
+    
+    // [PERBAIKAN]: Saldo Setelah Penambahan kini sama dengan Saldo Yang Ditambahkan
+    safeSet('cetakSysTotal', formatNum(sTmbh)); 
+    
     safeSet('cetakFisik', formatNum(fisik)); 
     safeSet('cetakKurang', formatNum(selisih < 0 ? Math.abs(selisih) : 0)); 
     safeSet('cetakLebih', formatNum(selisih > 0 ? selisih : 0));
@@ -890,6 +896,41 @@ function printRiwayatBAOpname(rawStr) {
     if (qrEl) qrEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
 
     new bootstrap.Modal(document.getElementById('baOpnameModal')).show();
+}
+
+function calcOpname() {
+    let sSblm = parseFloat(document.getElementById('opSysSebelum').value) || 0; 
+    let sTmbh = parseFloat(document.getElementById('opSysTambah').value) || 0; 
+    let fisik = parseFloat(document.getElementById('opFisik').value) || 0;
+    
+    // [PERBAIKAN]: Total Target Sistem di UI Kalkulator hanya menampilkan sTmbh
+    document.getElementById('opSysTotal').innerText = formatRp(sTmbh);
+    
+    let selisih = fisik - sSblm; 
+    let textSelisih = document.getElementById('opSelisihText'); 
+    let badgeSelisih = document.getElementById('opSelisihBadge');
+    let boxSelisih = document.getElementById('opSelisihBox');
+    
+    textSelisih.innerText = formatRp(Math.abs(selisih));
+    
+    if (selisih > 0) { 
+        textSelisih.className = "fw-black mb-0 text-success"; 
+        badgeSelisih.className = "badge bg-success rounded-pill mt-2 px-3 py-2 shadow-sm"; 
+        badgeSelisih.innerHTML = "<i class='bi bi-arrow-up-circle-fill'></i> Selisih LEBIH (Uang Sisa)"; 
+        boxSelisih.className = "p-3 rounded-4 text-center border mt-auto transition-all bg-success-subtle border-success-subtle";
+    } 
+    else if (selisih < 0) { 
+        textSelisih.className = "fw-black mb-0 text-danger"; 
+        badgeSelisih.className = "badge bg-danger rounded-pill mt-2 px-3 py-2 shadow-sm"; 
+        badgeSelisih.innerHTML = "<i class='bi bi-arrow-down-circle-fill'></i> Selisih KURANG (Uang Hilang)"; 
+        boxSelisih.className = "p-3 rounded-4 text-center border mt-auto transition-all bg-danger-subtle border-danger-subtle";
+    } 
+    else { 
+        textSelisih.className = "fw-black mb-0 text-dark"; 
+        badgeSelisih.className = "badge bg-secondary rounded-pill mt-2 px-3 py-2 shadow-sm"; 
+        badgeSelisih.innerHTML = "<i class='bi bi-check-circle-fill'></i> Balance / Seimbang"; 
+        boxSelisih.className = "p-3 rounded-4 text-center border mt-auto transition-all bg-secondary-subtle";
+    }
 }
 
 // ==========================================
@@ -1086,42 +1127,7 @@ function renderDataMaster() {
     document.getElementById('paginationMaster').innerHTML = renderPagination(filteredData.length, pageState.master, PAGE_SIZE, 'master');
 }
 
-// ==========================================
-// 7. ENGINE OPNAME FISIK ATM & A4 PDF
-// ==========================================
-function calcOpname() {
-    let sSblm = parseFloat(document.getElementById('opSysSebelum').value) || 0; 
-    let sTmbh = parseFloat(document.getElementById('opSysTambah').value) || 0; 
-    let fisik = parseFloat(document.getElementById('opFisik').value) || 0;
-    
-    document.getElementById('opSysTotal').innerText = formatRp(sSblm + sTmbh);
-    
-    let selisih = fisik - sSblm; 
-    let textSelisih = document.getElementById('opSelisihText'); 
-    let badgeSelisih = document.getElementById('opSelisihBadge');
-    let boxSelisih = document.getElementById('opSelisihBox');
-    
-    textSelisih.innerText = formatRp(Math.abs(selisih));
-    
-    if (selisih > 0) { 
-        textSelisih.className = "fw-black mb-0 text-success"; 
-        badgeSelisih.className = "badge bg-success rounded-pill mt-2 px-3 py-2 shadow-sm"; 
-        badgeSelisih.innerHTML = "<i class='bi bi-arrow-up-circle-fill'></i> Selisih LEBIH (Uang Sisa)"; 
-        boxSelisih.className = "p-3 rounded-4 text-center border mt-auto transition-all bg-success-subtle border-success-subtle";
-    } 
-    else if (selisih < 0) { 
-        textSelisih.className = "fw-black mb-0 text-danger"; 
-        badgeSelisih.className = "badge bg-danger rounded-pill mt-2 px-3 py-2 shadow-sm"; 
-        badgeSelisih.innerHTML = "<i class='bi bi-arrow-down-circle-fill'></i> Selisih KURANG (Uang Hilang)"; 
-        boxSelisih.className = "p-3 rounded-4 text-center border mt-auto transition-all bg-danger-subtle border-danger-subtle";
-    } 
-    else { 
-        textSelisih.className = "fw-black mb-0 text-dark"; 
-        badgeSelisih.className = "badge bg-secondary rounded-pill mt-2 px-3 py-2 shadow-sm"; 
-        badgeSelisih.innerHTML = "<i class='bi bi-check-circle-fill'></i> Balance / Seimbang"; 
-        boxSelisih.className = "p-3 rounded-4 text-center border mt-auto transition-all bg-secondary-subtle";
-    }
-}
+
 // ==========================================
 // INTERAKTIVITAS MENU OPNAME ATM
 // ==========================================
