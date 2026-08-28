@@ -397,10 +397,11 @@ async function processEJ() {
     showProgressAlert('Membaca File EJ...', 'Sedang merakit jurnal mesin...');
     let processedFiles = 0;
 
-    // [PERBAIKAN 1]: Kamus Pemetaan ID Mesin (Bisa ditambah jika ada kasus serupa)
+    // [PERBAIKAN 1]: Kamus Pemetaan Jaring Ganda (Double-Net Dictionary)
     const atmIdMap = {
         "346": "KTM12902",
-        "75": "KTM12901"
+        "075": "KTM12901",
+        "75": "KTM12901" // Antisipasi jika mesin / sistem membaca tanpa angka nol
     };
 
     for (let file of files) {
@@ -429,7 +430,6 @@ async function processEJ() {
                 }
                 if (!currentTx.nominal) currentTx.nominal = 0;
                 
-                // [PERBAIKAN 2]: Hapus penolakan mutlak terhadap angka murni jika sudah divalidasi panjangnya
                 let finalAtmId = currentTx.atm; 
                 if (!finalAtmId || finalAtmId === 'UNKNOWN') finalAtmId = lastValidAtmId;
                 
@@ -448,15 +448,16 @@ async function processEJ() {
                 currentTx.tanggal = `20${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`; 
                 lastValidDate = currentTx.tanggal; 
                 
-                let tempAtm = dateMatch[5]; 
+                // Pastikan tidak ada spasi gaib yang menempel
+                let tempAtm = dateMatch[5].trim(); 
                 
-                // [PERBAIKAN 3]: Cek apakah ID ada di Kamus Pemetaan
+                // [PERBAIKAN 2]: Cek Kamus Pemetaan (Otomatis mengubah 075 atau 75 menjadi KTM12901)
                 if (atmIdMap[tempAtm]) {
                     tempAtm = atmIdMap[tempAtm];
                 }
                 
-                // [PERBAIKAN 4]: Terima ID jika ada huruf, ATAU jika angka tapi panjangnya minimal 3 digit
-                if (/[A-Z]/i.test(tempAtm) || tempAtm.length >= 3) {
+                // [PERBAIKAN 3]: Syarat dilonggarkan menjadi minimal 2 digit agar "75" bisa lolos
+                if (/[A-Z]/i.test(tempAtm) || tempAtm.length >= 2) {
                     lastValidAtmId = tempAtm; 
                 }
                 currentTx.atm = lastValidAtmId; 
@@ -500,6 +501,7 @@ async function processEJ() {
         showPreviewModal(ejData, 'EJ');
     }, 500);
 }
+
 
 function showPreviewModal(data, type) {
     pendingUploadData = data; pendingUploadType = type === 'GL' ? 'uploadGL' : 'uploadEJ';
