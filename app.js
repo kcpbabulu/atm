@@ -99,12 +99,9 @@ async function fetchConfig() {
             document.getElementById('cfgAdmin').value = globalConfig.cfgAdmin || 'SUCI AINUL FITRI';
             document.getElementById('cfgSecurity').value = globalConfig.cfgSecurity || 'DADAN'; 
             
-          
-            if(document.getElementById('cfgRekDebet')) {
-                document.getElementById('cfgRekDebet').value = globalConfig.cfgRekDebet || '1299000105';
-            }
-            if(document.getElementById('cfgNamaDebet')) {
-                document.getElementById('cfgNamaDebet').value = globalConfig.cfgNamaDebet || 'KWJBN SGR-ATM DLM PENYELESAIAN';
+            // [TAMBAHAN]: Memuat data Rekening Penampungan dari Database Cloud
+            if(document.getElementById('cfgRekPenampungan')) {
+                document.getElementById('cfgRekPenampungan').value = globalConfig.cfgRekPenampungan || '1299000105 - KWJBN SGR-ATM DLM PENYELESAIAN';
             }
             
             // Terapkan Logo Jika Ada
@@ -235,7 +232,6 @@ function compressImageToBase64(file) {
 }
 
 superApp.saveBAConfig = async function() {
-    superApp.saveBAConfig = async function() {
     let payload = { 
         cfgCabang: document.getElementById('cfgCabang').value, 
         cfgAlamat: document.getElementById('cfgAlamat').value, 
@@ -243,14 +239,12 @@ superApp.saveBAConfig = async function() {
         cfgAdmin: document.getElementById('cfgAdmin').value,
         cfgSecurity: document.getElementById('cfgSecurity').value,
         
-        // [PERBAIKAN]: Menarik data dari dua input baru
-        cfgRekDebet: document.getElementById('cfgRekDebet') ? document.getElementById('cfgRekDebet').value : '',
-        cfgNamaDebet: document.getElementById('cfgNamaDebet') ? document.getElementById('cfgNamaDebet').value : '',
+        // [PERBAIKAN]: Menarik data dari input Rekening Penampungan
+        cfgRekPenampungan: document.getElementById('cfgRekPenampungan') ? document.getElementById('cfgRekPenampungan').value : '',
         
         cfgLogoKiri: globalConfig.cfgLogoKiri || '',
         cfgLogoKanan: globalConfig.cfgLogoKanan || ''
     };
-
     
     document.querySelectorAll('.cfg-teller-input').forEach(input => { payload['cfgTeller_' + input.getAttribute('data-atm')] = input.value.toUpperCase(); });
     
