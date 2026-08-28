@@ -782,12 +782,26 @@ function generateBA(rawStr) {
     document.getElementById('cetak_atm_judul').innerText = atmId; document.getElementById('cetak_hari').innerText = hariArr[dateObj.getDay()];
     document.getElementById('cetak_tgl').innerText = tglCetak; document.getElementById('cetak_atm').innerText = `${atmId} (${namaCabang})`;
     document.getElementById('cetak_nominal').innerText = nominalRaw; document.getElementById('cetak_rek').innerText = detail.rek;
-    document.getElementById('cetak_nama').innerText = detail.nama; document.getElementById('cetak_resi').innerText = `${resi}${atmId.replace('KTM','')}`;
+    document.getElementById('cetak_nama').innerText = detail.nama; 
+    
+    // [PERBAIKAN 1]: Menggabungkan Resi dan ID Mesin secara utuh
+    document.getElementById('cetak_resi').innerText = resi + atmId; 
+    
     document.getElementById('cetak_trx').innerText = detail.trx; document.getElementById('cetak_problem').innerText = detail.problem;
     document.getElementById('cetak_jurnal_ket').innerText = detail.problem; document.getElementById('cetak_keterangan').innerText = reasonText;
     document.getElementById('cetak_kredit_rek').innerText = detail.rek; document.getElementById('cetak_kredit_nama').innerText = detail.nama; document.getElementById('cetak_jurnal_nom').innerText = nominalRaw;
     
-  // --- GANTI BAGIAN INI ---
+    // [PERBAIKAN 2]: Menarik Rekening Penampungan Dinamis dari Pengaturan
+    let rekPenampungan = globalConfig.cfgRekPenampungan || '1299000105 - KWJBN SGR-ATM DLM PENYELESAIAN';
+    let rekParts = rekPenampungan.split('-');
+    let rekNomor = rekParts[0] ? rekParts[0].trim() : '1299000105';
+    let rekNama = rekParts[1] ? rekParts[1].trim() : 'KWJBN SGR-ATM DLM PENYELESAIAN';
+    
+    let debetContainer = document.getElementById('cetak_debet_rek_container');
+    if (debetContainer) {
+        debetContainer.innerHTML = `${rekNomor}<br><small>${rekNama}</small>`;
+    }
+    
     // Set QR Code Verifikasi B/A Penyelesaian mengarah ke Frontend (GitHub)
     let frontendUrl = window.location.origin + window.location.pathname;
     let qrData = encodeURIComponent(`${frontendUrl}?verify=ba&resi=${resi}&atm=${atmId}`);
