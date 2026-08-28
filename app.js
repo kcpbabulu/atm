@@ -810,16 +810,18 @@ function generateBA(rawStr) {
     document.getElementById('cetak_jurnal_ket').innerText = detail.problem; document.getElementById('cetak_keterangan').innerText = reasonText;
     document.getElementById('cetak_kredit_rek').innerText = detail.rek; document.getElementById('cetak_kredit_nama').innerText = detail.nama; document.getElementById('cetak_jurnal_nom').innerText = nominalRaw;
     
-    // [PERBAIKAN 2]: Menarik Rekening Penampungan Dinamis yang sudah dipisah (Tanpa split lagi)
-    let rekNomor = globalConfig.cfgRekDebet || '1299000105';
-    let rekNama = globalConfig.cfgNamaDebet || 'KWJBN SGR-ATM DLM PENYELESAIAN';
+    // [PERBAIKAN 2]: Menarik Rekening Penampungan Dinamis dari Pengaturan
+    let rekPenampungan = globalConfig.cfgRekPenampungan || '1299000105 - KWJBN SGR-ATM DLM PENYELESAIAN';
+    let rekParts = rekPenampungan.split('-');
+    let rekNomor = rekParts[0] ? rekParts[0].trim() : '1299000105';
+    let rekNama = rekParts[1] ? rekParts[1].trim() : 'KWJBN SGR-ATM DLM PENYELESAIAN';
     
     let debetContainer = document.getElementById('cetak_debet_rek_container');
     if (debetContainer) {
         debetContainer.innerHTML = `${rekNomor}<br><small>${rekNama}</small>`;
     }
     
-    // Set QR Code Verifikasi B/A Penyelesaian mengarah ke Frontend
+    // Set QR Code Verifikasi B/A Penyelesaian mengarah ke Frontend (GitHub)
     let frontendUrl = window.location.origin + window.location.pathname;
     let qrData = encodeURIComponent(`${frontendUrl}?verify=ba&resi=${resi}&atm=${atmId}`);
     document.getElementById('qrBAPenyelesaian').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
