@@ -99,6 +99,11 @@ async function fetchConfig() {
             document.getElementById('cfgAdmin').value = globalConfig.cfgAdmin || 'SUCI AINUL FITRI';
             document.getElementById('cfgSecurity').value = globalConfig.cfgSecurity || 'DADAN'; 
             
+            // [TAMBAHAN]: Memuat data Rekening Penampungan dari Database Cloud
+            if(document.getElementById('cfgRekPenampungan')) {
+                document.getElementById('cfgRekPenampungan').value = globalConfig.cfgRekPenampungan || '1299000105 - KWJBN SGR-ATM DLM PENYELESAIAN';
+            }
+            
             // Terapkan Logo Jika Ada
             if(globalConfig.cfgLogoKiri) {
                 document.getElementById('previewLogoKiri').src = globalConfig.cfgLogoKiri;
@@ -233,9 +238,14 @@ superApp.saveBAConfig = async function() {
         cfgPimpinan: document.getElementById('cfgPimpinan').value, 
         cfgAdmin: document.getElementById('cfgAdmin').value,
         cfgSecurity: document.getElementById('cfgSecurity').value,
+        
+        // [PERBAIKAN]: Menarik data dari input Rekening Penampungan
+        cfgRekPenampungan: document.getElementById('cfgRekPenampungan') ? document.getElementById('cfgRekPenampungan').value : '',
+        
         cfgLogoKiri: globalConfig.cfgLogoKiri || '',
         cfgLogoKanan: globalConfig.cfgLogoKanan || ''
     };
+    
     document.querySelectorAll('.cfg-teller-input').forEach(input => { payload['cfgTeller_' + input.getAttribute('data-atm')] = input.value.toUpperCase(); });
     
     PlayfulAlert.fire({ title: 'Menyimpan & Memproses Gambar...', allowOutsideClick: false }); PlayfulAlert.showLoading();
