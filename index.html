@@ -1131,6 +1131,21 @@
                         </div>
                     </div>
 
+                    <!-- AKUNTANSI & PEMBUKUAN (TAMBAHAN BARU) -->
+                    <div class="card bg-white border-0 shadow-sm rounded-4 mb-4 p-3 bouncy-hover">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3"><i class="bi bi-wallet2 text-success me-2"></i> Akuntansi & Rekening Penyelesaian</h6>
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label class="small fw-bold text-muted mb-1">No. Rekening Debet (GL)</label>
+                                <input type="text" id="cfgRekDebet" class="form-control rounded-pill bg-light border-0 fw-bold" placeholder="1299000105">
+                            </div>
+                            <div class="col-md-7">
+                                <label class="small fw-bold text-muted mb-1">Nama Rekening Debet</label>
+                                <input type="text" id="cfgNamaDebet" class="form-control rounded-pill bg-light border-0 fw-bold" placeholder="KWJBN SGR-ATM DLM PENYELESAIAN">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- PENANGGUNG JAWAB ATM -->
                     <div class="card bg-white border-0 shadow-sm rounded-4 p-3 bouncy-hover" id="tellerConfigContainer">
                         <!-- Di-generate otomatis dari JS -->
@@ -1402,7 +1417,20 @@
                         
                         <table class="table table-bordered table-sm text-center border-dark mb-2 align-middle" style="font-size: 12.5px;">
                             <thead class="fw-bold"><tr><th>Debet</th><th>Kredit</th><th class="text-nowrap" width="20%">Nominal</th><th>Keterangan</th></tr></thead>
-                            <tbody><tr><td>1299000105<br><small>KWJBN SGR-ATM DLM PENYELESAIAN</small></td><td><span id="cetak_kredit_rek"></span><br><small id="cetak_kredit_nama"></small></td><td class="fw-bold text-nowrap" id="cetak_jurnal_nom"></td><td id="cetak_jurnal_ket"></td></tr></tbody>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <span id="cetak_debet_rek">1299000105</span><br>
+                                        <small id="cetak_debet_nama">KWJBN SGR-ATM DLM PENYELESAIAN</small>
+                                    </td>
+                                    <td>
+                                        <span id="cetak_kredit_rek"></span><br>
+                                        <small id="cetak_kredit_nama"></small>
+                                    </td>
+                                    <td class="fw-bold text-nowrap" id="cetak_jurnal_nom"></td>
+                                    <td id="cetak_jurnal_ket"></td>
+                                </tr>
+                            </tbody>
                         </table>
                         
                         <p style="text-align: justify; font-size: 13.5px;" class="mb-3">Demikian berita acara ini kami sampaikan, untuk dapat diproses lebih lanjut oleh unit terkait. Atas perhatian dan kerjasamanya disampaikan terima kasih.</p>
