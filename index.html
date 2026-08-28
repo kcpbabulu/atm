@@ -870,28 +870,28 @@
                     <div id="arsipPagination" class="mt-2"></div>
                 </div>
 
-                <!-- MODAL REKAM JEJAK (AUDIT TRAIL) -->
-                <div class="modal fade" id="jejakModal" tabindex="-1">
-                    <div class="modal-dialog modal-dialog-centered modal-lg">
-                        <div class="modal-content rounded-4 border-0 shadow-lg">
-                            <div class="modal-header border-0 bg-dark text-white rounded-top-4 pb-4" style="background: linear-gradient(135deg, #1f2937 0%, #111827 100%);">
-                                <div>
-                                    <h5 class="fw-black mb-1"><i class="bi bi-diagram-3-fill text-warning me-2"></i> Kronologi Audit Trail</h5>
-                                    <span class="badge bg-light text-dark rounded-pill shadow-sm px-3 py-2 fw-bold" id="jejakSub">ATM - Resi</span>
-                                </div>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body p-4 bg-white" style="margin-top: -20px; border-radius: 20px 20px 0 0; box-shadow: 0 -10px 20px rgba(0,0,0,0.1);">
-                                <div class="timeline-wrapper" id="jejakTimeline">
-                                    <!-- Dibangun otomatis oleh JS -->
-                                </div>
-                            </div>
-                            <div class="modal-footer border-0 bg-light rounded-bottom-4 justify-content-center">
-                                <button type="button" class="btn btn-dark rounded-pill fw-bold px-5 shadow-sm bouncy-hover" data-bs-dismiss="modal">Tutup Rekam Jejak</button>
-                            </div>
-                        </div>
+                <!-- MODAL REKAM JEJAK (AUDIT TRAIL FINTECH) -->
+<div class="modal fade" id="jejakModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content rounded-4 border-0 shadow-lg" style="background: var(--bg-light);">
+            <div class="modal-header border-0 pb-4" style="background: var(--banking-gradient); color: white; border-radius: 16px 16px 0 0;">
+                <div>
+                    <h5 class="fw-black mb-1" style="font-family: var(--font-ui);"><i class="bi bi-radar text-info me-2"></i> Audit Trail & Telemetri</h5>
+                    <div class="d-flex align-items-center gap-2 mt-2">
+                        <span class="badge bg-white text-dark rounded-pill shadow-sm px-3 py-2 fw-bold" id="jejakSub">ATM</span>
+                        <span class="badge bg-info bg-opacity-25 text-info rounded-pill px-3 py-2 border border-info border-opacity-25" id="jejakTgl">TGL</span>
                     </div>
                 </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 bg-white" style="margin-top: -15px; border-radius: 20px 20px 0 0; box-shadow: 0 -10px 25px rgba(0,0,0,0.05);">
+                <div class="modern-timeline" id="jejakTimeline">
+                    <!-- Dibangun otomatis oleh JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
               <!-- ========================================== -->
                 <!-- 2. PUSAT DATA (UPLOAD + DATA MASTER)       -->
