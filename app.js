@@ -399,7 +399,7 @@ async function processEJ() {
 
     // [PERBAIKAN 1]: Kamus Pemetaan ID Mesin (Bisa ditambah jika ada kasus serupa)
     const atmIdMap = {
-        "346": "KTM12902"
+        "346": "KTM12902",
         "075": "KTM12901"
     };
 
