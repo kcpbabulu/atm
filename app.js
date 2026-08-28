@@ -1659,37 +1659,62 @@ superApp.bukaJejak = function(rawStr) {
     const nominal = parseFloat(row[3]);
     const jenis = row[4];
     const isSelesai = String(row[5]).toLowerCase() !== 'belum';
-    const ket = row[6] || '-';
+    const ketRaw = row[6] || '';
     const tglAnalisa = row[7] || tglTrx;
 
-    document.getElementById('jejakSub').innerText = `${atm} | Resi: ${resi}`;
+    // Header Setup
+    document.getElementById('jejakSub').innerHTML = `<i class="bi bi-cpu-fill text-primary"></i> ${atm} &bull; REF: ${resi}`;
+    document.getElementById('jejakTgl').innerText = `Trx: ${tglTrx}`;
 
-    // 1. NODE: INSIDEN SELISIH
-    const icon1 = jenis.includes('LEBIH') ? 'bg-success bi-arrow-up-circle' : 'bg-danger bi-arrow-down-circle';
-    let html = `
-        <div class="timeline-item fade-in" style="animation-delay: 0.1s;">
-            <div class="timeline-icon ${icon1} shadow"><i class="bi"></i></div>
-            <div class="timeline-content">
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="badge bg-dark rounded-pill">1. Kejadian Awal</span>
-                    <small class="text-muted fw-bold">${tglTrx}</small>
+    // Pecah Keterangan & JSON (Jika Ada)
+    let reasonText = ketRaw;
+    let detailJSON = {};
+    if (ketRaw.includes('|||')) {
+        let parts = ketRaw.split('|||');
+        reasonText = parts[0].trim();
+        try { detailJSON = JSON.parse(parts[1].trim()); } catch(e){}
+    } else if (!isSelesai && ketRaw === '') {
+        reasonText = 'Sistem mendeteksi selisih pada pencocokan GL dan EJ. Menunggu tindak lanjut user.';
+    }
+
+    let html = '';
+    const isLebih = jenis.includes('LEBIH');
+
+    // ==========================================
+    // NODE 1: DETEKSI INSIDEN (SYSTEM CORE)
+    // ==========================================
+    html += `
+        <div class="timeline-node ${isLebih ? 'success' : 'danger'} fade-in" style="animation-delay: 0.1s;">
+            <div class="timeline-card border-${isLebih ? 'success' : 'danger'}-subtle">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="badge bg-${isLebih ? 'success' : 'danger'} rounded-pill"><i class="bi bi-1-circle-fill"></i> Deteksi Anomali Sistem</span>
+                    <small class="text-muted fw-bold tabular-nums"><i class="bi bi-clock-history"></i> ${String(tglAnalisa).substring(0,10)}</small>
                 </div>
-                <h6 class="fw-black mb-1">${jenis}</h6>
-                <p class="mb-0 text-secondary small">Sistem mendeteksi ada anomali transaksi senilai <b class="text-primary">${formatRp(nominal)}</b> pada proses analisa tanggal ${String(tglAnalisa).substring(0,10)}.</p>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 bg-light rounded-4 text-center border">
+                        <span class="d-block small text-muted fw-bold mb-1">NOMINAL</span>
+                        <span class="tabular-nums fw-black text-${isLebih ? 'success' : 'danger'}" style="font-size: 1.1rem;">${formatRp(nominal)}</span>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">${jenis}</h6>
+                        <p class="mb-0 text-secondary small" style="line-height:1.4;">Berdasarkan hasil pembacaan Electronic Journal (EJ) dan mutasi GL, sistem menangkap ketidaksesuaian saldo pada mesin <b class="text-dark">${atm}</b> dengan nomor referensi <b class="text-dark">${resi}</b>.</p>
+                    </div>
+                </div>
             </div>
         </div>
     `;
 
-    // 2. MENCARI PASANGAN OPNAME (PENGISIAN ATM)
+    // ==========================================
+    // NODE 2: PENCOCOKAN OPNAME FISIK
+    // ==========================================
     let tglBAselesai = null;
-    let matchBA = ket.match(/tanggal (\d{4}-\d{2}-\d{2})/);
+    let matchBA = ketRaw.match(/tanggal (\d{4}-\d{2}-\d{2})/);
     if(matchBA) tglBAselesai = matchBA[1];
 
     let matchedOpname = null;
     if(tglBAselesai) {
         matchedOpname = universalDataCache.opname.find(o => String(o[1]).substring(0,10) === tglBAselesai && String(o[2]).trim() === atm);
     } else {
-        // Cari opname terdekat SETELAH tanggal transaksi
         let dTrx = new Date(tglTrx + "T00:00:00");
         let possible = universalDataCache.opname.filter(o => String(o[2]).trim() === atm && new Date(String(o[1]).substring(0,10) + "T00:00:00") >= dTrx);
         if(possible.length > 0) {
@@ -1699,63 +1724,73 @@ superApp.bukaJejak = function(rawStr) {
     }
 
     if(matchedOpname) {
-        let opWaktu = String(matchedOpname[1]).substring(0,16);
+        let opWaktu = String(matchedOpname[1]).substring(0,16).replace('T', ' Pukul ');
         let sSblm = parseFloat(matchedOpname[3]) || 0;
         let sTmbh = parseFloat(matchedOpname[4]) || 0;
         let sFisik = parseFloat(matchedOpname[6]) || 0;
         let sSelisih = parseFloat(matchedOpname[7]) || 0;
+        let diffColor = sSelisih === 0 ? 'secondary' : (sSelisih > 0 ? 'success' : 'danger');
 
         html += `
-        <div class="timeline-item fade-in" style="animation-delay: 0.2s;">
-            <div class="timeline-icon bg-warning shadow"><i class="bi bi-safe-fill text-dark"></i></div>
-            <div class="timeline-content border-warning-subtle">
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="badge bg-warning text-dark rounded-pill">2. Opname & Pengisian ATM</span>
-                    <small class="text-muted fw-bold">${opWaktu.replace('T', ' ')}</small>
+        <div class="timeline-node warning fade-in" style="animation-delay: 0.2s;">
+            <div class="timeline-card">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge bg-warning text-dark rounded-pill fw-bold"><i class="bi bi-2-circle-fill"></i> Data Opname Fisik Ditemukan</span>
+                    <small class="text-muted fw-bold tabular-nums"><i class="bi bi-calendar-check"></i> ${opWaktu}</small>
                 </div>
-                <div class="row text-center mt-2 g-2">
-                    <div class="col-4 border-end"><span class="d-block small text-muted" style="font-size:0.6rem">SALDO AWAL</span><span class="fw-bold" style="font-size:0.8rem">${formatRp(sSblm)}</span></div>
-                    <div class="col-4 border-end"><span class="d-block small text-muted" style="font-size:0.6rem">KAS DITAMBAH</span><span class="fw-bold text-success" style="font-size:0.8rem">${formatRp(sTmbh)}</span></div>
-                    <div class="col-4"><span class="d-block small text-muted" style="font-size:0.6rem">FISIK LACI</span><span class="fw-black text-dark" style="font-size:0.8rem">${formatRp(sFisik)}</span></div>
-                </div>
-                <div class="mt-2 p-2 bg-light rounded text-center border">
-                    <span class="small fw-bold">Hasil Akhir: Terdapat ${sSelisih > 0 ? 'Kelebihan Uang Fisik' : 'Kekurangan Uang Fisik'} senilai <b class="${sSelisih>0?'text-success':'text-danger'}">${formatRp(Math.abs(sSelisih))}</b></span>
+                <div class="info-grid mt-3">
+                    <div class="info-box text-center"><span>Saldo Tersisa (Sistem)</span><strong class="tabular-nums">${formatRp(sSblm)}</strong></div>
+                    <div class="info-box text-center"><span>Kas Baru Ditambahkan</span><strong class="tabular-nums text-primary">${formatRp(sTmbh)}</strong></div>
+                    <div class="info-box text-center"><span>Uang Fisik Dihitung</span><strong class="tabular-nums text-dark">${formatRp(sFisik)}</strong></div>
+                    <div class="info-box text-center border-${diffColor}-subtle bg-${diffColor}-subtle">
+                        <span class="text-${diffColor}">Total Selisih Fisik</span>
+                        <strong class="tabular-nums text-${diffColor}">${formatRp(Math.abs(sSelisih))}</strong>
+                    </div>
                 </div>
             </div>
         </div>`;
     } else {
         html += `
-        <div class="timeline-item fade-in" style="animation-delay: 0.2s;">
-            <div class="timeline-icon bg-secondary shadow"><i class="bi bi-dash"></i></div>
-            <div class="timeline-content bg-light opacity-75">
-                <span class="badge bg-secondary rounded-pill mb-2">2. Riwayat Pengisian (Opname)</span>
-                <p class="mb-0 text-muted small fst-italic">Belum ada Berita Acara Opname fisik ATM yang terikat dengan transaksi ini.</p>
+        <div class="timeline-node secondary fade-in" style="animation-delay: 0.2s;">
+            <div class="timeline-card bg-light opacity-75 border-0 shadow-none">
+                <span class="badge bg-secondary rounded-pill mb-2"><i class="bi bi-2-circle-fill"></i> Riwayat Opname Fisik</span>
+                <p class="mb-0 text-muted small fst-italic">Sistem belum menemukan Berita Acara Opname fisik ATM yang relevan dengan tanggal transaksi ini.</p>
             </div>
         </div>`;
     }
 
-    // 3. NODE: STATUS PENYELESAIAN
+    // ==========================================
+    // NODE 3: RESOLUSI & TINDAK LANJUT
+    // ==========================================
     if (isSelesai) {
         html += `
-        <div class="timeline-item fade-in" style="animation-delay: 0.3s;">
-            <div class="timeline-icon bg-primary shadow"><i class="bi bi-check-all"></i></div>
-            <div class="timeline-content border-primary-subtle bg-primary-subtle">
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="badge bg-primary rounded-pill">3. Kasus Ditutup (Selesai)</span>
-                    <small class="text-primary fw-bold">Berhasil Diselesaikan</small>
+        <div class="timeline-node fade-in" style="animation-delay: 0.3s; --primary-color: var(--primary-color);">
+            <div class="timeline-card border-primary" style="background: rgba(124, 58, 237, 0.03);">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="badge bg-primary rounded-pill"><i class="bi bi-3-circle-fill"></i> Penyelesaian Kasus (Closed)</span>
+                    <small class="text-primary fw-bold tabular-nums"><i class="bi bi-calendar-event"></i> ${detailJSON.tglSelesai || tglAnalisa}</small>
                 </div>
-                <p class="mb-2 text-dark small fw-medium"><i class="bi bi-quote text-secondary fs-5"></i> ${ket.split('|||')[0]}</p>
-                <button class="btn btn-sm btn-dark rounded-pill fw-bold shadow-sm w-100" onclick="generateBA('${rawStr}')"><i class="bi bi-printer"></i> Cetak Ulang B/A Penyelesaian</button>
+                <p class="mb-3 text-dark small fw-medium pb-3 border-bottom border-primary-subtle"><i class="bi bi-quote fs-5 text-primary opacity-50"></i> ${reasonText}</p>
+                
+                <div class="info-grid mb-3">
+                    <div class="info-box"><span>Jenis Trx:</span><strong>${detailJSON.trx || '-'}</strong></div>
+                    <div class="info-box"><span>Problem Utama:</span><strong>${detailJSON.problem || '-'}</strong></div>
+                    <div class="info-box"><span>Rek. Tujuan (Kredit):</span><strong class="tabular-nums">${detailJSON.rek || '-'}</strong></div>
+                    <div class="info-box"><span>Nama Nasabah:</span><strong class="text-truncate d-block" title="${detailJSON.nama || '-'}">${detailJSON.nama || '-'}</strong></div>
+                </div>
+                
+                <button class="btn btn-primary rounded-pill fw-bold shadow-sm w-100 bouncy-hover" onclick="generateBA('${rawStr}')">
+                    <i class="bi bi-printer-fill me-1"></i> Cetak Dokumen Resolusi (B/A)
+                </button>
             </div>
         </div>`;
     } else {
         html += `
-        <div class="timeline-item fade-in" style="animation-delay: 0.3s;">
-            <div class="timeline-icon bg-danger shadow" style="animation: pulse-red 2s infinite;"><i class="bi bi-hourglass-split"></i></div>
-            <div class="timeline-content border-danger-subtle bg-danger-subtle">
-                <span class="badge bg-danger rounded-pill mb-2">3. Status Saat Ini</span>
-                <h6 class="fw-bold text-danger mb-0">Transaksi Masih Menggantung!</h6>
-                <p class="mb-0 text-dark small mt-1">Harap segera selesaikan anomali ini di menu "Analisa" atau sesuaikan dengan Berita Acara Opname.</p>
+        <div class="timeline-node danger fade-in" style="animation-delay: 0.3s;">
+            <div class="timeline-card" style="border: 2px dashed var(--danger-color); background: #fffcfc;">
+                <span class="badge bg-danger rounded-pill mb-2"><i class="bi bi-hourglass-split"></i> Status Saat Ini: Menggantung</span>
+                <h6 class="fw-bold text-danger mb-1 mt-1">Menunggu Tindakan Administrasi</h6>
+                <p class="mb-0 text-dark small">Anomali ini belum diselesaikan. Pastikan Anda melakukan verifikasi dan menerbitkan Berita Acara Penyelesaian melalui menu Analisa.</p>
             </div>
         </div>`;
     }
