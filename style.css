@@ -282,3 +282,34 @@ body.tour-active .floating-bottom-nav {
     .kertas-a4 { width: 210mm !important; height: 297mm !important; padding: 15mm 20mm !important; max-width: none !important; box-shadow: none !important; border-radius: 0; }
     .kop-logo { max-height: 55px !important; }
 }
+
+/* ========================================== */
+/* 9. VERTICAL TIMELINE AUDIT TRAIL           */
+/* ========================================== */
+.modern-timeline { position: relative; padding-left: 2.5rem; margin-top: 1rem; }
+.modern-timeline::before { 
+    content: ''; position: absolute; left: 0.85rem; top: 0.5rem; bottom: 0; 
+    width: 2px; background: rgba(124, 58, 237, 0.2); border-radius: 2px; 
+}
+.timeline-node { position: relative; margin-bottom: 2rem; }
+.timeline-node::before { 
+    content: ''; position: absolute; left: -2.4rem; top: 0.2rem; width: 1.5rem; height: 1.5rem; 
+    border-radius: 50%; background: #fff; border: 4px solid var(--primary-color); z-index: 2; 
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1); transition: all 0.3s;
+}
+.timeline-node.danger::before { border-color: var(--danger-color); box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.1); }
+.timeline-node.success::before { border-color: var(--accent-color); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
+.timeline-node.warning::before { border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1); }
+.timeline-node.secondary::before { border-color: #94a3b8; border-style: dashed; box-shadow: none; background: #f8fafc;}
+
+.timeline-card { 
+    background: #fff; border: 1px solid #f1f5f9; border-radius: 16px; 
+    padding: 1.25rem; box-shadow: 0 4px 6px rgba(0,0,0,0.02); transition: all 0.3s; 
+}
+.timeline-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(124, 58, 237, 0.08); border-color: rgba(124, 58, 237, 0.3); }
+
+/* Grid Info Mini di dalam Timeline */
+.info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+.info-box { background: var(--bg-light); padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0; }
+.info-box span { display: block; font-size: 0.65rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;}
+.info-box strong { font-family: var(--font-data); font-size: 0.9rem; color: #1e293b; }
