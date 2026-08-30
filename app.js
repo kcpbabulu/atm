@@ -1821,7 +1821,19 @@ function renderDashboard() {
     const bulanArr = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
     let period = getActivePeriod();
     let y = period.substring(2,6); let m = parseInt(period.substring(0,2)) - 1;
-    document.getElementById('dashBulan').innerText = `Periode Aktif: ${bulanArr[m]} ${y}`;
+    
+    // Simpan nama bulan ke dalam variabel agar bisa dipakai di banyak tempat
+    let namaBulanLengkap = `${bulanArr[m]} ${y}`; 
+    document.getElementById('dashBulan').innerText = `Periode Aktif: ${namaBulanLengkap}`;
+
+    // ==========================================
+    // [TAMBAHAN]: Update Contextual Badge & Watermark Analisa AI
+    // ==========================================
+    let badgeAnalisa = document.getElementById('analisaMonthBadge');
+    let watermarkAnalisa = document.getElementById('watermarkMonth');
+    if (badgeAnalisa) badgeAnalisa.innerHTML = `<i class="bi bi-calendar-event me-1"></i> ${namaBulanLengkap}`;
+    if (watermarkAnalisa) watermarkAnalisa.innerText = namaBulanLengkap.toUpperCase();
+
 
     // 2. Hitung Data Master (Trx)
     let glCount = databaseData.gl ? databaseData.gl.length : 0;
