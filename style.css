@@ -313,3 +313,29 @@ body.tour-active .floating-bottom-nav {
 .info-box { background: var(--bg-light); padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0; }
 .info-box span { display: block; font-size: 0.65rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;}
 .info-box strong { font-family: var(--font-data); font-size: 0.9rem; color: #1e293b; }
+
+/* ========================================== */
+/* 10. BACKGROUND WATERMARK                   */
+/* ========================================== */
+.watermark-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none; /* Agar tidak menghalangi klik pada tabel */
+    z-index: 0;
+    width: 100%;
+    text-align: center;
+    overflow: hidden;
+}
+
+.watermark-text {
+    font-family: var(--font-data);
+    font-size: clamp(4rem, 8vw, 8rem);
+    font-weight: 900;
+    color: var(--primary-color);
+    opacity: 0.03; /* Sangat transparan, seperti bayangan */
+    margin: 0;
+    white-space: nowrap;
+    user-select: none;
+}
