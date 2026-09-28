@@ -434,14 +434,22 @@ async function processEJ() {
 
             if (currentTx.noResi) {
                 if (!currentTx.tanggal) currentTx.tanggal = lastValidDate;
-                if (currentTx.cashTaken) currentTx.status = "SUKSES";
-                else if (!currentTx.status) {
-                    if (currentTx.jenis === "TARIK TUNAI" && (!currentTx.nominal || currentTx.nominal === 0)) currentTx.status = "GAGAL - TIDAK ADA UANG KELUAR";
+                
+                // 🚀 PERBAIKAN LOGIKA STATUS 
+                if (currentTx.cashTaken) {
+                    currentTx.status = "SUKSES";
+                } else if (!currentTx.status) {
+                    // Jika Tarik Tunai tapi TIDAK ADA Cash Taken, itu PASTI GAGAL (Apapun nominalnya)
+                    if (currentTx.jenis === "TARIK TUNAI" || currentTx.jenis === "PENARIKAN TUNAI TANPA KARTU") {
+                        currentTx.status = "GAGAL - UANG TIDAK KELUAR";
+                    } 
                     else if (currentTx.nominal > 0) {
                         if (currentTx.jenis === "TRANSFER") currentTx.status = "SUKSES (TRANSFER)";
                         else if (currentTx.jenis === "PEMBAYARAN") currentTx.status = "SUKSES (PEMBELIAN/PAYMENT)";
                         else currentTx.status = "SUKSES";
-                    } else currentTx.status = "NON-FINANSIAL";
+                    } else {
+                        currentTx.status = "NON-FINANSIAL";
+                    }
                 }
                 if (!currentTx.nominal) currentTx.nominal = 0;
                 
@@ -516,7 +524,7 @@ async function processEJ() {
                 currentTx.status = (currentTx.jenis === "TRANSFER") ? "SUKSES (TRANSFER)" : (currentTx.jenis === "PEMBAYARAN") ? "SUKSES (PEMBELIAN/PAYMENT)" : "SUKSES";
             }
             
-            const errorKeywords = ["SALDO KURANG", "SALAH MASUKKAN PIN", "KARTU ANDA SUDAH KADALUARSA", "HIGH BILL MIX ERROR", "LOW BILL MIX ERROR", "DISPENSER ERROR", "COMMUNICATION ERROR", "COMMUNICATION OFFLINE", "CDM ERROR", "KD.ARE/NO.TELP TDK TERDAFTA", "RESTRICTED PHONE NUMBER", "MELEBIHI LIMIT", "INACTIVE ACCOUNT", "UNABLE TO PROCESS", "TIDAK DAPAT DIPROSES", "INVALID ZERO AMOUNT", "INVALID INSTITUTION", "RESPONSE CODE GAGAL", "CHIP CARD SECURITY FAILURE", "PROCESSOR TEMP DOWN", "KARTU ANDA TERDAFTAR SBG", "TRANSAKSI SEDANG DIPROSES", "SUSPECT"];
+            const errorKeywords = ["SALDO KURANG", "SALAH MASUKKAN PIN", "KARTU ANDA SUDAH KADALUARSA", "HIGH BILL MIX ERROR", "ANDA MELEBIHI BATAS LIMIT", "DO NOT HONOR","LOW BILL MIX ERROR", "DISPENSER ERROR", "COMMUNICATION ERROR", "COMMUNICATION OFFLINE", "CDM ERROR", "KD.ARE/NO.TELP TDK TERDAFTA", "RESTRICTED PHONE NUMBER", "MELEBIHI LIMIT", "INACTIVE ACCOUNT", "UNABLE TO PROCESS", "TIDAK DAPAT DIPROSES", "INVALID ZERO AMOUNT", "INVALID INSTITUTION", "RESPONSE CODE GAGAL", "CHIP CARD SECURITY FAILURE", "PROCESSOR TEMP DOWN", "KARTU ANDA TERDAFTAR SBG", "TRANSAKSI SEDANG DIPROSES", "NO ARPC", "SUSPECT"];
             errorKeywords.forEach(err => { if (textUpper.includes(err) && !currentTx.cashTaken) currentTx.status = "GAGAL - " + err; });
             if (line.match(/TRANSACTION \d+ FAILED/i) && !currentTx.cashTaken) currentTx.status = "GAGAL - TRANSACTION FAILED";
         }
