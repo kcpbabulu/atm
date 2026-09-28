@@ -566,217 +566,225 @@
                     </div>
                 </div>
 
-              <div id="opname" class="page-section d-none fade-in">
-                    <!-- Header dengan Tombol Panduan Interaktif -->
-                    <div class="d-flex justify-content-between align-items-center mb-4 mt-2 border-bottom pb-3">
-                        <div>
-                            <h4 class="fw-black mb-0 text-dark d-flex align-items-center">
-                                <i class="bi bi-safe-fill text-danger me-2"></i> Opname Kas Fisik
-                            </h4>
-                            <p class="text-muted small fw-medium mb-0 mt-1">Modul perhitungan uang fisik laci ATM dan manajemen Berita Acara penambalan selisih.</p>
+              <!-- ========================================== -->
+<!-- 4. MODUL OPNAME KAS FISIK                  -->
+<!-- ========================================== -->
+<div id="opname" class="page-section d-none fade-in">
+    <!-- Header dengan Tombol Panduan Interaktif -->
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-2 border-bottom pb-3">
+        <div>
+            <h4 class="fw-black mb-0 text-dark d-flex align-items-center" style="font-family: var(--font-ui);">
+                <div class="bg-danger-subtle text-danger rounded-circle p-2 me-3 shadow-sm d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="bi bi-safe-fill"></i>
+                </div>
+                Opname Kas Fisik
+            </h4>
+            <p class="text-muted small fw-medium mb-0 mt-2">Modul perhitungan uang fisik laci ATM dan manajemen Berita Acara penambalan selisih.</p>
+        </div>
+        <button class="btn btn-outline-danger btn-sm rounded-pill fw-bold shadow-sm bouncy-hover px-3 d-flex align-items-center" onclick="startOpnameTour()">
+            <i class="bi bi-question-circle-fill me-1"></i> Panduan
+        </button>
+    </div>
+
+    <!-- Modern Segmented Tabs -->
+    <ul class="nav nav-pills bg-light p-1 rounded-pill shadow-inner mb-4 border d-flex flex-nowrap overflow-auto hide-scrollbar" role="tablist">
+        <li class="nav-item flex-fill" role="presentation">
+            <button class="nav-link active w-100 rounded-pill fw-bold py-2 text-nowrap transition-all" id="tab-op-form" data-bs-toggle="pill" data-bs-target="#op-form-tab" type="button" style="font-size: 0.85rem;">
+                <i class="bi bi-pencil-square text-primary me-1"></i> Form Input B/A
+            </button>
+        </li>
+        <li class="nav-item flex-fill" role="presentation">
+            <button class="nav-link w-100 rounded-pill fw-bold py-2 text-nowrap transition-all" id="tab-op-riwayat" data-bs-toggle="pill" data-bs-target="#op-riwayat-tab" type="button" style="font-size: 0.85rem;" onclick="fetchOpnameHistory()">
+                <i class="bi bi-clock-history text-danger me-1"></i> Riwayat & Arsip B/A
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- TAB 1: INPUT FORM SUPER INTERAKTIF -->
+        <div class="tab-pane fade show active" id="op-form-tab" role="tabpanel">
+            <div class="row g-4">
+                <!-- Kolom Kiri: Form & Smart Insight -->
+                <div class="col-lg-5">
+                    <div class="card bg-white shadow-sm border-0 rounded-4 bouncy-hover mb-3">
+                        <div class="card-header bg-transparent border-bottom-0 pt-4 pb-0 px-4">
+                            <h6 class="fw-bold text-dark mb-0"><i class="bi bi-atm text-primary me-2"></i> Identitas Mesin & Waktu</h6>
                         </div>
-                        <button class="btn btn-outline-danger btn-sm rounded-pill fw-bold shadow-sm bouncy-hover px-3 d-flex align-items-center" onclick="startOpnameTour()">
-                            <i class="bi bi-question-circle-fill me-1"></i> Panduan Menu (Tour)
-                        </button>
+                        <div class="card-body p-4">
+                            <input type="hidden" id="opEditId">
+                            
+                            <div class="mb-4">
+                                <label class="small fw-bold text-muted mb-2" style="font-size:0.75rem">ID MESIN ATM</label>
+                                <div class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden border border-primary-subtle">
+                                    <span class="input-group-text bg-light border-0 text-primary px-4"><i class="bi bi-search"></i></span>
+                                    <input type="text" id="opAtmId" list="dl-atm" class="form-control border-0 bg-light fw-black text-dark fs-5" placeholder="Ketik KTM..." oninput="updateOpnameSmartInfo()">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="small fw-bold text-muted mb-2" style="font-size:0.75rem">WAKTU PELAKSANAAN OPNAME</label>
+                                <input type="datetime-local" id="opWaktu" class="form-control form-control-lg rounded-pill bg-light border-0 text-secondary shadow-inner fw-bold px-4">
+                            </div>
+
+                            <div class="mt-4">
+                                <label class="small fw-bold text-muted mb-2" style="font-size:0.75rem">NAMA SECURITY (SHIFT SAAT INI)</label>
+                                <div class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden border border-primary-subtle">
+                                    <span class="input-group-text bg-light border-0 text-primary px-4"><i class="bi bi-shield-check"></i></span>
+                                    <input type="text" id="opSecurityName" class="form-control border-0 bg-light fw-bold text-dark fs-6" placeholder="Ketik Nama Security...">
+                                </div>
+                                <small class="text-muted fw-bold d-block mt-2" style="font-size:0.65rem;">*Kosongkan jika ingin menggunakan nama default dari Pengaturan.</small>
+                            </div>
+                        </div>
                     </div>
 
-                   <!-- Modern Segmented Tabs (DIPERBAIKI) -->
-                    <ul class="nav nav-pills bg-light p-1 rounded-pill shadow-sm mb-4 border d-flex flex-nowrap overflow-auto hide-scrollbar" role="tablist">
-                        <li class="nav-item flex-fill" role="presentation">
-                            <button class="nav-link active w-100 rounded-pill fw-bold py-2 text-nowrap transition-all" id="tab-op-form" data-bs-toggle="pill" data-bs-target="#op-form-tab" type="button" style="font-size: 0.85rem;">
-                                <i class="bi bi-pencil-square text-primary me-1"></i> Form Input B/A
-                            </button>
-                        </li>
-                        <li class="nav-item flex-fill" role="presentation">
-                            <button class="nav-link w-100 rounded-pill fw-bold py-2 text-nowrap transition-all" id="tab-op-riwayat" data-bs-toggle="pill" data-bs-target="#op-riwayat-tab" type="button" style="font-size: 0.85rem;" onclick="fetchOpnameHistory()">
-                                <i class="bi bi-clock-history text-danger me-1"></i> Riwayat & Arsip B/A
-                            </button>
-                        </li>
-                    </ul>
-
-                    <div class="tab-content">
-                        <!-- TAB 1: INPUT FORM SUPER INTERAKTIF -->
-                        <div class="tab-pane fade show active" id="op-form-tab" role="tabpanel">
-                            <div class="row g-4">
-                                <!-- Kolom Kiri: Form & Smart Insight -->
-                                <div class="col-lg-5">
-                                    <div class="card bg-white shadow-sm border-0 rounded-4 bouncy-hover mb-3">
-                                        <div class="card-header bg-transparent border-bottom-0 pt-4 pb-0 px-4">
-                                            <h6 class="fw-bold text-dark mb-0"><i class="bi bi-atm text-primary me-2"></i> Identitas Mesin & Waktu</h6>
-                                        </div>
-                                        <div class="card-body p-4">
-                                            <input type="hidden" id="opEditId">
-                                            
-                                            <div class="mb-4">
-                                                <label class="small fw-bold text-muted mb-2" style="font-size:0.75rem">ID MESIN ATM</label>
-                                                <div class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden border border-primary-subtle">
-                                                    <span class="input-group-text bg-light border-0 text-primary px-4"><i class="bi bi-search"></i></span>
-                                                    <input type="text" id="opAtmId" list="dl-atm" class="form-control border-0 bg-light fw-black text-dark fs-5" placeholder="Ketik KTM..." oninput="updateOpnameSmartInfo()">
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label class="small fw-bold text-muted mb-2" style="font-size:0.75rem">WAKTU PELAKSANAAN OPNAME</label>
-                                                <input type="datetime-local" id="opWaktu" class="form-control form-control-lg rounded-pill bg-light border-0 text-secondary shadow-inner fw-bold px-4">
-                                            </div>
-
-                                            <!-- TAMBAHKAN INI TEPAT DI BAWAH WAKTU OPNAME -->
-                                            <div class="mt-4">
-                                                <label class="small fw-bold text-muted mb-2" style="font-size:0.75rem">NAMA SECURITY (SHIFT SAAT INI)</label>
-                                                <div class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden border border-primary-subtle">
-                                                    <span class="input-group-text bg-light border-0 text-primary px-4"><i class="bi bi-shield-check"></i></span>
-                                                    <input type="text" id="opSecurityName" class="form-control border-0 bg-light fw-bold text-dark fs-6" placeholder="Ketik Nama Security...">
-                                                </div>
-                                                <small class="text-muted fw-bold d-block mt-2" style="font-size:0.65rem;">*Kosongkan jika ingin menggunakan nama default dari Pengaturan.</small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Panel Smart Insight (Live Update) -->
-                                    <div id="opSmartInfoPanel" class="card bg-info-subtle border-0 rounded-4 shadow-sm d-none bouncy-hover transition-all overflow-hidden position-relative">
-                                        <div class="position-absolute top-0 end-0 opacity-10 pt-2 pe-2"><i class="bi bi-robot" style="font-size: 5rem;"></i></div>
-                                        <div class="card-body p-4 position-relative z-1">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <div class="bg-white rounded-circle p-2 shadow-sm me-2 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
-                                                    <i class="bi bi-stars text-info fs-5"></i>
-                                                </div>
-                                                <h6 class="fw-bold text-dark mb-0">AI Insight Mesin</h6>
-                                            </div>
-                                            <div id="opSmartContent" class="bg-white p-3 rounded-4 shadow-sm border border-info-subtle">
-                                                <!-- Diisi otomatis oleh JS -->
-                                            </div>
-                                        </div>
-                                    </div>
+                    <!-- Panel Smart Insight (Live Update) -->
+                    <div id="opSmartInfoPanel" class="card bg-info-subtle border-0 rounded-4 shadow-sm d-none bouncy-hover transition-all overflow-hidden position-relative">
+                        <div class="position-absolute top-0 end-0 opacity-10 pt-2 pe-2"><i class="bi bi-robot" style="font-size: 5rem;"></i></div>
+                        <div class="card-body p-4 position-relative z-1">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-white rounded-circle p-2 shadow-sm me-2 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                    <i class="bi bi-stars text-info fs-5"></i>
                                 </div>
-
-                                <!-- Kolom Kanan: Visual Kalkulator -->
-                                <div class="col-lg-7">
-                                    <div class="card bg-white shadow-sm border-0 rounded-4 h-100 overflow-hidden d-flex flex-column">
-                                        <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center px-4">
-                                            <h6 class="fw-bold mb-0"><i class="bi bi-calculator-fill text-warning me-2"></i> Kalkulator Rekonsiliasi Kas</h6>
-                                            <span class="badge bg-white text-dark rounded-pill fw-bold">Tahap 1 dari 2</span>
-                                        </div>
-                                        <div class="card-body p-4 bg-light flex-fill">
-                                            <div class="row g-3 h-100">
-                                                <!-- Tarikan Sistem -->
-                                                <div class="col-md-6 d-flex flex-column">
-                                                    <div class="p-3 bg-white rounded-4 border border-primary-subtle shadow-sm flex-fill position-relative d-flex flex-column">
-                                                        <span class="badge bg-primary position-absolute top-0 start-50 translate-middle rounded-pill px-3 py-2 shadow-sm border border-2 border-white"><i class="bi bi-pc-display"></i> CATATAN SISTEM</span>
-                                                        <div class="mt-4 flex-fill">
-                                                            <label class="small fw-bold text-muted mb-2 d-block text-center" style="font-size:0.65rem">1. SALDO SEBELUM PENGISIAN (Rp)</label>
-                                                            <input type="number" id="opSysSebelum" class="form-control form-control-lg rounded-pill mb-4 fw-bold border-primary-subtle text-primary text-center shadow-inner" placeholder="0" oninput="calcOpname()">
-                                                            
-                                                            <label class="small fw-bold text-muted mb-2 d-block text-center" style="font-size:0.65rem">2. KAS YANG DITAMBAHKAN (Rp)</label>
-                                                            <input type="number" id="opSysTambah" class="form-control form-control-lg rounded-pill mb-3 fw-bold border-primary-subtle text-primary text-center shadow-inner" placeholder="0" oninput="calcOpname()">
-                                                        </div>
-                                                        <div class="bg-primary-subtle p-3 rounded-4 text-center mt-3 border border-primary-subtle">
-                                                            <span class="small fw-bold text-primary d-block mb-1" style="font-size:0.65rem">TOTAL TARGET SISTEM</span>
-                                                            <h5 class="fw-black text-dark mb-0" id="opSysTotal">Rp 0</h5>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Perhitungan Fisik -->
-                                                <div class="col-md-6 d-flex flex-column">
-                                                    <div class="p-3 bg-white rounded-4 border border-warning-subtle shadow-sm flex-fill position-relative d-flex flex-column">
-                                                        <span class="badge bg-warning text-dark position-absolute top-0 start-50 translate-middle rounded-pill px-3 py-2 shadow-sm border border-2 border-white"><i class="bi bi-cash-stack"></i> FISIK LACI</span>
-                                                        <div class="mt-4 flex-fill d-flex flex-column justify-content-center">
-                                                            <label class="small fw-bold text-muted mb-2 text-center" style="font-size:0.65rem">3. HASIL PERHITUNGAN UANG FISIK (Rp)</label>
-                                                            <input type="number" id="opFisik" class="form-control form-control-lg rounded-pill mb-3 fw-black border-warning text-center fs-3 shadow-inner text-dark" placeholder="0" oninput="calcOpname()" style="height: 70px;">
-                                                        </div>
-                                                        <div id="opSelisihBox" class="p-3 rounded-4 text-center mt-3 transition-all bg-secondary-subtle border border-secondary-subtle">
-                                                            <span class="small fw-bold text-dark d-block mb-1" style="font-size:0.65rem">STATUS SELISIH KAS</span>
-                                                            <h4 class="fw-black mb-1" id="opSelisihText">Rp 0</h4>
-                                                            <span id="opSelisihBadge" class="badge bg-secondary rounded-pill mt-1 px-3 py-2 shadow-sm"><i class="bi bi-dash-circle"></i> Balance</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="card-footer bg-white border-top p-4 d-flex gap-3">
-                                            <button class="btn btn-outline-dark btn-lg rounded-pill fw-bold px-4 bouncy-hover shadow-sm d-flex align-items-center" onclick="previewBAOpname()" title="Pratinjau Kertas A4">
-                                                <i class="bi bi-printer me-2"></i> Pratinjau
-                                            </button>
-                                            <button class="btn btn-primary btn-lg rounded-pill fw-bold flex-fill bouncy-hover shadow-sm d-flex align-items-center justify-content-center" onclick="saveOpnameData()">
-                                                <i class="bi bi-cloud-arrow-up-fill me-2 fs-5"></i> Simpan ke Database
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <h6 class="fw-bold text-dark mb-0">AI Insight Mesin</h6>
                             </div>
-                        </div>
-
-                        <!-- TAB 2: RIWAYAT OPNAME -->
-                        <div class="tab-pane fade" id="op-riwayat-tab" role="tabpanel">
-                            <!-- Banner Progress Mewah -->
-                            <div class="card bg-dark text-white border-0 shadow-sm rounded-4 mb-4 overflow-hidden position-relative bouncy-hover">
-                                <i class="bi bi-shield-lock-fill position-absolute end-0 bottom-0 opacity-10" style="font-size: 10rem; margin-bottom: -30px; margin-right: -10px;"></i>
-                                <div class="card-body p-4 position-relative z-1">
-                                    <div class="d-flex justify-content-between align-items-center mb-4">
-                                        <h6 class="fw-bold text-warning mb-0"><i class="bi bi-pie-chart-fill me-2"></i> Ketersediaan Kompensasi B/A Opname Fisik</h6>
-                                        <span class="badge bg-white text-dark rounded-pill fw-bold px-3">Bulan Aktif</span>
-                                    </div>
-                                    
-                                    <div class="row text-center mb-4 g-3">
-                                        <div class="col-4 border-end border-secondary">
-                                            <span class="small text-light fw-medium d-block mb-1" style="font-size: 0.7rem;">TOTAL SELISIH FISIK</span>
-                                            <h4 class="fw-black mb-0 text-white" id="op-hierarki-tot">Rp 0</h4>
-                                        </div>
-                                        <div class="col-4 border-end border-secondary">
-                                            <span class="small text-light fw-medium d-block mb-1" style="font-size: 0.7rem;">TERPAKAI (MENUTUP KASUS)</span>
-                                            <h4 class="fw-black mb-0 text-info" id="op-hierarki-pakai">Rp 0</h4>
-                                        </div>
-                                        <div class="col-4">
-                                            <span class="small text-light fw-medium d-block mb-1" style="font-size: 0.7rem;">SISA KUOTA B/A</span>
-                                            <h4 class="fw-black mb-0 text-warning" id="op-hierarki-sisa">Rp 0</h4>
-                                        </div>
-                                    </div>
-                                    <div class="progress rounded-pill shadow-inner bg-secondary border border-secondary" style="height: 10px;">
-                                        <div id="op-hierarki-progress" class="progress-bar bg-info progress-bar-striped progress-bar-animated" style="width: 0%"></div>
-                                    </div>
-                                </div>
+                            <div id="opSmartContent" class="bg-white p-3 rounded-4 shadow-sm border border-info-subtle">
+                                <!-- Diisi otomatis oleh JS -->
                             </div>
-
-                            <!-- Toolbar Filter ala Enterprise -->
-                            <div class="card bg-white border border-light shadow-sm rounded-pill mb-4 p-2">
-                                <div class="row g-2 align-items-center px-2">
-                                    <div class="col-md-3">
-                                        <h6 class="fw-bold text-dark mb-0 ms-2"><i class="bi bi-list-ul text-danger me-2"></i> Daftar Opname</h6>
-                                    </div>
-                                    <div class="col-6 col-md-5">
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text bg-light border-0 text-muted pe-1 rounded-start-pill"><i class="bi bi-hdd-rack"></i></span>
-                                            <input type="text" id="filterAtmOp" list="dl-atm" class="form-control bg-light border-0 rounded-end-pill px-3 fw-bold text-dark" placeholder="Cari ID Mesin..." oninput="changePage('opname', 1); renderOpnameTable();">
-                                        </div>
-                                    </div>
-                                    <div class="col-6 col-md-4">
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text bg-light border-0 text-muted pe-1 rounded-start-pill"><i class="bi bi-calendar-date"></i></span>
-                                            <input type="date" id="filterTglOp" class="form-control bg-light border-0 rounded-end-pill px-3 fw-bold text-secondary" onchange="changePage('opname', 1); renderOpnameTable();">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Tabel Interaktif -->
-                            <div class="table-responsive rounded-4 shadow-sm bg-white border">
-                                <table class="table table-hover table-sm table-custom-compact align-middle mb-0 text-nowrap">
-                                    <thead class="table-light sticky-top border-bottom">
-                                        <tr>
-                                            <th width="20%" class="ps-3">WAKTU PELAKSANAAN</th>
-                                            <th width="15%">MESIN ATM</th>
-                                            <th width="20%">HASIL HITUNG FISIK</th>
-                                            <th width="25%">STATUS PENAMBALAN AI</th>
-                                            <th width="20%" class="text-center pe-3">AKSI</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tableBodyOpname"></tbody>
-                                </table>
-                            </div>
-                            <div id="paginationOpname" class="mt-2"></div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Kolom Kanan: Visual Kalkulator -->
+                <div class="col-lg-7">
+                    <div class="card bg-white shadow-sm border-0 rounded-4 h-100 overflow-hidden d-flex flex-column">
+                        <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center px-4">
+                            <h6 class="fw-bold mb-0"><i class="bi bi-calculator-fill text-warning me-2"></i> Kalkulator Rekonsiliasi Kas</h6>
+                            <span class="badge bg-white text-dark rounded-pill fw-bold">Tahap 1 dari 2</span>
+                        </div>
+                        <div class="card-body p-4 bg-light flex-fill">
+                            <div class="row g-3 h-100">
+                                <!-- Tarikan Sistem -->
+                                <div class="col-md-6 d-flex flex-column">
+                                    <div class="p-3 bg-white rounded-4 border border-primary-subtle shadow-sm flex-fill position-relative d-flex flex-column">
+                                        <span class="badge bg-primary position-absolute top-0 start-50 translate-middle rounded-pill px-3 py-2 shadow-sm border border-2 border-white"><i class="bi bi-pc-display"></i> CATATAN SISTEM</span>
+                                        <div class="mt-4 flex-fill">
+                                            <label class="small fw-bold text-muted mb-2 d-block text-center" style="font-size:0.65rem">1. SALDO SEBELUM PENGISIAN (Rp)</label>
+                                            <input type="number" id="opSysSebelum" class="form-control form-control-lg rounded-pill mb-4 fw-bold border-primary-subtle text-primary text-center shadow-inner" placeholder="0" oninput="calcOpname()">
+                                            
+                                            <label class="small fw-bold text-muted mb-2 d-block text-center" style="font-size:0.65rem">2. KAS YANG DITAMBAHKAN (Rp)</label>
+                                            <input type="number" id="opSysTambah" class="form-control form-control-lg rounded-pill mb-3 fw-bold border-primary-subtle text-primary text-center shadow-inner" placeholder="0" oninput="calcOpname()">
+                                        </div>
+                                        <div class="bg-primary-subtle p-3 rounded-4 text-center mt-3 border border-primary-subtle">
+                                            <span class="small fw-bold text-primary d-block mb-1" style="font-size:0.65rem">TOTAL TARGET SISTEM</span>
+                                            <h5 class="fw-black text-dark mb-0 tabular-nums" id="opSysTotal">Rp 0</h5>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Perhitungan Fisik -->
+                                <div class="col-md-6 d-flex flex-column">
+                                    <div class="p-3 bg-white rounded-4 border border-warning-subtle shadow-sm flex-fill position-relative d-flex flex-column">
+                                        <span class="badge bg-warning text-dark position-absolute top-0 start-50 translate-middle rounded-pill px-3 py-2 shadow-sm border border-2 border-white"><i class="bi bi-cash-stack"></i> FISIK LACI</span>
+                                        <div class="mt-4 flex-fill d-flex flex-column justify-content-center">
+                                            <label class="small fw-bold text-muted mb-2 text-center" style="font-size:0.65rem">3. HASIL PERHITUNGAN UANG FISIK (Rp)</label>
+                                            <input type="number" id="opFisik" class="form-control form-control-lg rounded-pill mb-3 fw-black border-warning text-center fs-3 shadow-inner text-dark tabular-nums" placeholder="0" oninput="calcOpname()" style="height: 70px;">
+                                        </div>
+                                        <div id="opSelisihBox" class="p-3 rounded-4 text-center mt-3 transition-all bg-secondary-subtle border border-secondary-subtle">
+                                            <span class="small fw-bold text-dark d-block mb-1" style="font-size:0.65rem">STATUS SELISIH KAS</span>
+                                            <h4 class="fw-black mb-1 tabular-nums" id="opSelisihText">Rp 0</h4>
+                                            <span id="opSelisihBadge" class="badge bg-secondary rounded-pill mt-1 px-3 py-2 shadow-sm"><i class="bi bi-dash-circle"></i> Balance</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-top p-4 d-flex gap-3">
+                            <button class="btn btn-outline-dark btn-lg rounded-pill fw-bold px-4 bouncy-hover shadow-sm d-flex align-items-center" onclick="previewBAOpname()" title="Pratinjau Kertas A4">
+                                <i class="bi bi-printer me-2"></i> Pratinjau
+                            </button>
+                            <button class="btn btn-primary btn-lg rounded-pill fw-bold flex-fill bouncy-hover shadow-sm d-flex align-items-center justify-content-center" onclick="saveOpnameData()">
+                                <i class="bi bi-cloud-arrow-up-fill me-2 fs-5"></i> Simpan ke Database
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: RIWAYAT OPNAME -->
+        <div class="tab-pane fade" id="op-riwayat-tab" role="tabpanel">
+            <!-- Banner Progress Mewah -->
+            <div class="card text-white border-0 shadow-sm rounded-4 mb-4 overflow-hidden position-relative bouncy-hover" style="background: var(--banking-gradient);">
+                <i class="bi bi-shield-lock-fill position-absolute end-0 bottom-0 opacity-10" style="font-size: 10rem; margin-bottom: -30px; margin-right: -10px;"></i>
+                <div class="card-body p-4 position-relative z-1">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h6 class="fw-bold mb-0" style="color: #a5b4fc;"><i class="bi bi-pie-chart-fill me-2"></i> Ketersediaan Kompensasi B/A Opname Fisik</h6>
+                        <span class="badge bg-white text-dark rounded-pill fw-bold px-3 shadow-sm">Bulan Aktif</span>
+                    </div>
+                    
+                    <div class="row text-center mb-4 g-3">
+                        <div class="col-4 border-end" style="border-color: rgba(255,255,255,0.1) !important;">
+                            <span class="small text-light fw-medium d-block mb-1" style="font-size: 0.7rem;">TOTAL SELISIH FISIK</span>
+                            <h4 class="fw-black mb-0 text-white tabular-nums" id="op-hierarki-tot">Rp 0</h4>
+                        </div>
+                        <div class="col-4 border-end" style="border-color: rgba(255,255,255,0.1) !important;">
+                            <span class="small text-light fw-medium d-block mb-1" style="font-size: 0.7rem;">TERPAKAI (MENUTUP KASUS)</span>
+                            <h4 class="fw-black mb-0 text-info tabular-nums" id="op-hierarki-pakai">Rp 0</h4>
+                        </div>
+                        <div class="col-4">
+                            <span class="small text-light fw-medium d-block mb-1" style="font-size: 0.7rem;">SISA KUOTA B/A</span>
+                            <h4 class="fw-black mb-0 text-warning tabular-nums" id="op-hierarki-sisa">Rp 0</h4>
+                        </div>
+                    </div>
+                    <div class="progress rounded-pill shadow-inner bg-secondary border border-secondary" style="height: 10px;">
+                        <div id="op-hierarki-progress" class="progress-bar bg-info progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOOLBAR FILTER & SORTING OPNAME (DIPERBAIKI) -->
+            <div class="card bg-white border-0 shadow-sm rounded-4 mb-4 p-2">
+                <div class="row g-2 align-items-center px-2">
+                    <div class="col-12 col-md-8 d-flex gap-2">
+                        <div class="input-group input-group-sm rounded-pill bg-light border border-light p-1 px-2">
+                            <span class="input-group-text bg-transparent border-0 text-muted"><i class="bi bi-hdd-rack"></i></span>
+                            <input type="text" id="filterAtmOp" list="dl-atm" class="form-control bg-transparent border-0 shadow-none fw-bold text-dark" placeholder="Cari ID Mesin..." oninput="changePage('opname', 1); renderOpnameTable()">
+                        </div>
+                        <div class="input-group input-group-sm rounded-pill bg-light border border-light p-1 px-2">
+                            <span class="input-group-text bg-transparent border-0 text-muted"><i class="bi bi-calendar-date"></i></span>
+                            <input type="date" id="filterTglOp" class="form-control bg-transparent border-0 shadow-none fw-bold text-dark tabular-nums" onchange="changePage('opname', 1); renderOpnameTable()" title="Filter Tanggal">
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <select id="sortWaktuOp" class="form-select form-select-sm bg-dark text-white border-0 rounded-pill px-3 py-2 fw-bold shadow-sm" onchange="changePage('opname', 1); renderOpnameTable()">
+                            <option value="desc">Urutkan: Waktu Terbaru</option>
+                            <option value="asc">Urutkan: Waktu Terlama</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABEL RIWAYAT OPNAME -->
+            <div class="table-responsive rounded-4 shadow-sm bg-white border border-light mb-3 position-relative z-1">
+                <table class="table table-hover table-sm table-custom-compact align-middle mb-0 text-nowrap">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3"><i class="bi bi-clock"></i> WAKTU PELAKSANAAN</th>
+                            <th>MESIN</th>
+                            <th>HASIL FISIK</th>
+                            <th>STATUS PENYELESAIAN</th>
+                            <th class="text-center pe-3">AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBodyOpname">
+                        <!-- Dibangun otomatis oleh JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationOpname" class="mt-2"></div>
+        </div>
+    </div>
+</div>
 
                 <!-- ARSIP UNIVERSAL -->
                 <div id="arsip" class="page-section d-none fade-in">
