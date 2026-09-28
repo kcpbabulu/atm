@@ -765,25 +765,37 @@ function renderSelisihTablesFiltered() {
 // ==========================================
 // PENYELESAIAN, CETAK PDF ANTI-BLANK, & DOCX EXPORT
 // ==========================================
+// Variabel global sementara untuk menyimpan nama petugas lama (jika sedang mode edit)
+let tempStoredNames = {};
+
 function openResolveModal(rawStr, encodedSaran = '') {
     activeResolveRow = JSON.parse(decodeURIComponent(rawStr)); 
     let saranText = encodedSaran ? decodeURIComponent(encodedSaran) : ''; 
     let nominal = formatRp(activeResolveRow[3]); 
     let tglTrx = String(activeResolveRow[0]).substring(0,10);
+    let jenisSelisih = String(activeResolveRow[4]).toUpperCase();
     
-    document.getElementById('resolveInfoBox').innerHTML = `<h6 class="fw-bold mb-1"><i class="bi bi-info-circle"></i> Info Transaksi</h6><p class="mb-1 small">ATM: <b>${activeResolveRow[1]}</b> | Tgl: <b>${tglTrx}</b> | Resi: <b>${activeResolveRow[2]}</b></p><p class="mb-1 small text-danger fw-bold">Nominal Selisih: ${nominal}</p>${saranText ? `<hr class="my-2"><p class="mb-0 small text-success fw-bold"><i class="bi bi-robot"></i> Rekomendasi AI: ${saranText}</p>` : ''}`;
+    document.getElementById('resolveInfoBox').innerHTML = `<h6 class="fw-bold mb-1"><i class="bi bi-info-circle"></i> Info Transaksi</h6><p class="mb-1 small">ATM: <b>${activeResolveRow[1]}</b> | Tgl: <b>${tglTrx}</b> | Resi: <b>${activeResolveRow[2]}</b></p><p class="mb-1 small text-danger fw-bold">Nominal ${jenisSelisih}: ${nominal}</p>${saranText ? `<hr class="my-2"><p class="mb-0 small text-success fw-bold"><i class="bi bi-robot"></i> Rekomendasi AI: ${saranText}</p>` : ''}`;
     
     // Set default tanggal hari ini
     let today = new Date().toISOString().split('T')[0];
     document.getElementById('resTanggal').value = today;
+    
+    // Reset memori nama petugas
+    tempStoredNames = {};
 
     let existingReason = activeResolveRow[6] || '';
     if (existingReason.toLowerCase() === 'belum' || existingReason === '') {
-        if(saranText) document.getElementById('resolveReason').value = `Transaksi ATM tidak tercatat pada EJ dengan keterangan GAGAL sehingga terjadi selisih lebih ${nominal} pada mesin ${activeResolveRow[1]}. ${saranText}`;
-        else document.getElementById('resolveReason').value = `Transaksi ATM tidak tercatat pada EJ dengan keterangan COMMUNICATION ERROR sehingga terjadi selisih pada mesin ${activeResolveRow[1]}`;
+        // [MODE KASUS BARU]
+        if(jenisSelisih === 'SELISIH KURANG') {
+            document.getElementById('resolveReason').value = `Uang keluar, tidak terdebet di GL. Dilakukan penyelesaian selisih ATM pada mesin ${activeResolveRow[1]}`;
+        } else {
+            if(saranText) document.getElementById('resolveReason').value = `Transaksi ATM tidak tercatat pada EJ dengan keterangan GAGAL sehingga terjadi selisih lebih ${nominal} pada mesin ${activeResolveRow[1]}. ${saranText}`;
+            else document.getElementById('resolveReason').value = `Transaksi ATM tidak tercatat pada EJ dengan keterangan COMMUNICATION ERROR sehingga terjadi selisih pada mesin ${activeResolveRow[1]}`;
+        }
         document.getElementById('resRekening').value = ''; document.getElementById('resNama').value = '';
     } else { 
-        // Mode Edit: Pecah JSON dari Keterangan
+        // [MODE EDIT / KASUS LAMA]
         let parts = existingReason.split('|||');
         document.getElementById('resolveReason').value = parts[0].trim();
         if(parts.length > 1) {
@@ -794,11 +806,19 @@ function openResolveModal(rawStr, encodedSaran = '') {
                 document.getElementById('resTrx').value = detail.trx || 'Tarik Tunai On Us';
                 document.getElementById('resProblem').value = detail.problem || 'Transaksi terdebet namun uang tidak keluar';
                 if(detail.tglSelesai) document.getElementById('resTanggal').value = detail.tglSelesai;
+                
+                // [PENTING]: Simpan nama petugas lama ke memori sementara agar tidak terhapus saat disave ulang
+                tempStoredNames = {
+                    pimpinan: detail.pimpinan,
+                    admin: detail.admin,
+                    teller: detail.teller
+                };
             } catch(e){}
         }
     }
     new bootstrap.Modal(document.getElementById('resolveModal')).show();
 }
+
 
 async function submitResolve() {
     const reason = document.getElementById('resolveReason').value.trim(); 
@@ -810,11 +830,30 @@ async function submitResolve() {
 
     if(!reason || !tglSelesai) return PlayfulAlert.fire('Tunggu dulu!', 'Harap isi Tanggal dan Keterangan penyelesaian.', 'warning');
     
-    // Simpan tanggal penyelesaian di dalam JSON agar tidak merusak struktur database
-    let finalKeterangan = `${reason} ||| ${JSON.stringify({rek: rekening, nama: nama, trx: trx, problem: problem, tglSelesai: tglSelesai})}`;
+    const tglSafe = String(activeResolveRow[0]).substring(0,10); 
+    const atmSafe = String(activeResolveRow[1]).trim(); 
+    const resiSafe = String(activeResolveRow[2]).trim();
+
+   // [PERBAIKAN]: Prioritaskan nama sejarah (jika sedang mengedit), jika kasus baru ambil nama dari Config
+    let currentPimpinan = tempStoredNames.pimpinan || globalConfig.cfgPimpinan || 'ENDY PRATAMA';
+    let currentAdmin = tempStoredNames.admin || globalConfig.cfgAdmin || 'SUCI AINUL FITRI';
+    let currentTeller = tempStoredNames.teller || globalConfig['cfgTeller_' + atmSafe.toUpperCase()] || 'TELLER AKTIF';
+    
+    // Simpan tanggal penyelesaian beserta nama petugas di dalam JSON agar permanen
+    let detailJSON = {
+        rek: rekening, 
+        nama: nama, 
+        trx: trx, 
+        problem: problem, 
+        tglSelesai: tglSelesai,
+        pimpinan: currentPimpinan,
+        admin: currentAdmin,
+        teller: currentTeller
+    };
+    
+    let finalKeterangan = `${reason} ||| ${JSON.stringify(detailJSON)}`;
     bootstrap.Modal.getInstance(document.getElementById('resolveModal')).hide();
     
-    const tglSafe = String(activeResolveRow[0]).substring(0,10); const atmSafe = String(activeResolveRow[1]).trim(); const resiSafe = String(activeResolveRow[2]).trim();
     const payload = { tanggal: tglSafe, atm: atmSafe, resi: resiSafe, status: 'Selesai', keterangan: finalKeterangan };
     
     PlayfulAlert.fire({ title: 'Menyimpan Data...', allowOutsideClick: false }); PlayfulAlert.showLoading();
@@ -850,8 +889,12 @@ function generateBA(rawStr) {
     let namaCabang = globalConfig.cfgCabang || 'Kantor Cabang Pembantu Babulu'; let kota = namaCabang.replace('Kantor Cabang Pembantu', '').replace('Kantor Cabang', '').trim();
     
     document.getElementById('cetak_cabang').innerText = namaCabang; document.getElementById('cetak_alamat').innerText = globalConfig.cfgAlamat || 'Jl. Propinsi KM. 48 RT. 05 RW. 02';
-    document.getElementById('cetak_pimpinan').innerText = globalConfig.cfgPimpinan || 'ENDY PRATAMA'; document.getElementById('cetak_admin').innerText = globalConfig.cfgAdmin || 'SUCI AINUL FITRI';
-    document.getElementById('cetak_teller').innerText = globalConfig['cfgTeller_' + atmId.toUpperCase()] || 'TELLER AKTIF';
+    
+    // [PERBAIKAN]: Tarik nama dari riwayat JSON (detail.pimpinan dkk), jika tidak ada baru panggil pengaturan hari ini
+    document.getElementById('cetak_pimpinan').innerText = detail.pimpinan || globalConfig.cfgPimpinan || 'ENDY PRATAMA'; 
+    document.getElementById('cetak_admin').innerText = detail.admin || globalConfig.cfgAdmin || 'SUCI AINUL FITRI';
+    document.getElementById('cetak_teller').innerText = detail.teller || globalConfig['cfgTeller_' + atmId.toUpperCase()] || 'TELLER AKTIF';
+    
     document.getElementById('cetak_kota').innerText = kota; document.getElementById('cetak_tgl_ttd').innerText = tglCetak;
     document.getElementById('cetak_atm_judul').innerText = atmId; document.getElementById('cetak_hari').innerText = hariArr[dateObj.getDay()];
     document.getElementById('cetak_tgl').innerText = tglCetak; document.getElementById('cetak_atm').innerText = `${atmId} (${namaCabang})`;
@@ -882,7 +925,6 @@ function generateBA(rawStr) {
     new bootstrap.Modal(document.getElementById('beritaAcaraModal')).show();
 }
 
-
 function previewBAOpname() {
     let atmId = document.getElementById('opAtmId').value || "......."; let waktuInput = document.getElementById('opWaktu').value;
     if (!waktuInput) return PlayfulAlert.fire('Oops!', 'Isi waktu pelaksanaan dulu ya.', 'warning');
@@ -893,7 +935,6 @@ function previewBAOpname() {
     let namaCabang = globalConfig.cfgCabang || 'Kantor Cabang Pembantu Babulu'; 
     let upperCabang = namaCabang.toUpperCase();
     
-    // Helper aman dari error null
     function safeSet(id, val) { let el = document.getElementById(id); if (el) el.innerText = val; }
 
     safeSet('cetakOp_cabang_header', upperCabang);
@@ -903,7 +944,7 @@ function previewBAOpname() {
     safeSet('cetakOp_cabang_text2', namaCabang);
     safeSet('cetakOp_alamat', globalConfig.cfgAlamat || 'Jl. Propinsi KM. 48 RT. 05 RW. 02');
     
-    // 4 Penanda Tangan Resmi
+    // [PREVIEW]: Wajib tarik nama dari Pengaturan Aktif hari ini
     safeSet('cetakOp_petugasTellerName', globalConfig['cfgTeller_' + atmId.toUpperCase()] || 'SUCI AINUL FITRI');
     safeSet('cetakOp_petugasAdminName', globalConfig.cfgAdmin || 'FISTRI ARIANDINI');
     
@@ -919,8 +960,6 @@ function previewBAOpname() {
     
     safeSet('cetakSysSebelum', formatNum(sSblm)); 
     safeSet('cetakSysTambah', formatNum(sTmbh)); 
-    
-    // [PERBAIKAN]: Saldo Setelah Penambahan kini sama dengan Saldo Yang Ditambahkan (Tidak lagi sSblm + sTmbh)
     safeSet('cetakSysTotal', formatNum(sTmbh)); 
     
     safeSet('cetakFisik', formatNum(fisik)); 
@@ -938,8 +977,20 @@ function previewBAOpname() {
 }
 
 function printRiwayatBAOpname(rawStr) {
-    const row = JSON.parse(decodeURIComponent(rawStr)); let waktuInput = row[1]; let atmId = row[2]; let sSblm = parseFloat(row[3]) || 0; let sTmbh = parseFloat(row[4]) || 0; let fisik = parseFloat(row[6]) || 0; let selisih = parseFloat(row[7]) || 0;
-    let dateObj = new Date(waktuInput.replace(' ', 'T')); let hariArr = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"]; let bulanArr = ["JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"];
+    const row = JSON.parse(decodeURIComponent(rawStr)); 
+    let waktuInput = row[1]; let atmId = row[2]; 
+    let sSblm = parseFloat(row[3]) || 0; let sTmbh = parseFloat(row[4]) || 0; 
+    let fisik = parseFloat(row[6]) || 0; let selisih = parseFloat(row[7]) || 0;
+    
+    // [PERBAIKAN]: Coba baca data JSON nama petugas dari kolom ke-9 (Index 8) jika sudah tersedia
+    let histPetugas = {};
+    if (row.length > 8 && row[8]) {
+        try { histPetugas = JSON.parse(row[8]); } catch(e){}
+    }
+
+    let dateObj = new Date(waktuInput.replace(' ', 'T')); 
+    let hariArr = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"]; 
+    let bulanArr = ["JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"];
     
     let namaCabang = globalConfig.cfgCabang || 'Kantor Cabang Pembantu Babulu'; 
     let upperCabang = namaCabang.toUpperCase();
@@ -953,11 +1004,11 @@ function printRiwayatBAOpname(rawStr) {
     safeSet('cetakOp_cabang_text2', namaCabang);
     safeSet('cetakOp_alamat', globalConfig.cfgAlamat || 'Jl. Propinsi KM. 48 RT. 05 RW. 02');
     
-    // 4 Penanda Tangan Resmi
-    safeSet('cetakOp_petugasTellerName', globalConfig['cfgTeller_' + atmId.toUpperCase()] || 'SUCI AINUL FITRI');
-    safeSet('cetakOp_petugasAdminName', globalConfig.cfgAdmin || 'FISTRI ARIANDINI');
-    safeSet('cetakOp_petugasSecurityName', globalConfig.cfgSecurity || 'DADAN');
-    safeSet('cetakOp_pimpinanName', globalConfig.cfgPimpinan || 'ENDY PRATAMA');
+    // [PERBAIKAN]: Prioritaskan nama sejarah dari JSON, jika kosong baru tarik dari Config
+    safeSet('cetakOp_petugasTellerName', histPetugas.teller || globalConfig['cfgTeller_' + atmId.toUpperCase()] || 'SUCI AINUL FITRI');
+    safeSet('cetakOp_petugasAdminName', histPetugas.admin || globalConfig.cfgAdmin || 'FISTRI ARIANDINI');
+    safeSet('cetakOp_petugasSecurityName', histPetugas.security || globalConfig.cfgSecurity || 'DADAN');
+    safeSet('cetakOp_pimpinanName', histPetugas.pimpinan || globalConfig.cfgPimpinan || 'ENDY PRATAMA');
     safeSet('cetakOp_pimpinanJabatan', `Pemimpin ${namaCabang}`);
 
     safeSet('cetakHari', hariArr[dateObj.getDay()]); 
@@ -967,8 +1018,6 @@ function printRiwayatBAOpname(rawStr) {
     
     safeSet('cetakSysSebelum', formatNum(sSblm)); 
     safeSet('cetakSysTambah', formatNum(sTmbh)); 
-    
-    // [PERBAIKAN]: Saldo Setelah Penambahan kini sama dengan Saldo Yang Ditambahkan
     safeSet('cetakSysTotal', formatNum(sTmbh)); 
     
     safeSet('cetakFisik', formatNum(fisik)); 
