@@ -1437,14 +1437,54 @@ async function deleteOpname(id) {
 }
 
 async function saveOpnameData() {
-    let payload = { id: document.getElementById('opEditId').value, atm: document.getElementById('opAtmId').value, waktu: document.getElementById('opWaktu').value, sysSebelum: document.getElementById('opSysSebelum').value, sysTambah: document.getElementById('opSysTambah').value, fisik: document.getElementById('opFisik').value };
-    if(!payload.atm || !payload.waktu || !payload.fisik) return PlayfulAlert.fire('Isian Kurang', 'Pastikan ID ATM, Waktu, dan Saldo Fisik terisi.', 'warning');
+    let atmInput = document.getElementById('opAtmId').value;
+    let waktuInput = document.getElementById('opWaktu').value;
+    let fisikInput = document.getElementById('opFisik').value;
+    
+    if(!atmInput || !waktuInput || !fisikInput) {
+        return PlayfulAlert.fire('Isian Kurang', 'Pastikan ID ATM, Waktu, dan Saldo Fisik terisi.', 'warning');
+    }
+
+    // [PENINGKATAN]: Potret (Snapshot) nama petugas yang aktif SAAT INI untuk dikunci permanen
+    let petugasSnapshot = JSON.stringify({
+        pimpinan: globalConfig.cfgPimpinan || 'ENDY PRATAMA',
+        admin: globalConfig.cfgAdmin || 'FISTRI ARIANDINI',
+        teller: globalConfig['cfgTeller_' + atmInput.toUpperCase()] || 'SUCI AINUL FITRI',
+        security: document.getElementById('opSecurityName') ? document.getElementById('opSecurityName').value.trim() : (globalConfig.cfgSecurity || 'DADAN')
+    });
+
+    // Masukkan potret tersebut ke dalam Payload
+    let payload = { 
+        id: document.getElementById('opEditId').value, 
+        atm: atmInput, 
+        waktu: waktuInput, 
+        sysSebelum: document.getElementById('opSysSebelum').value, 
+        sysTambah: document.getElementById('opSysTambah').value, 
+        fisik: fisikInput,
+        petugas: petugasSnapshot // <--- Dikirimkan ke backend untuk mengisi kolom ke-9
+    };
+    
     PlayfulAlert.fire({ title: 'Menyimpan...', allowOutsideClick: false }); PlayfulAlert.showLoading();
     try {
         const result = await apiCall('uploadOpname', payload);
-        if(result && result.success) { PlayfulAlert.fire('Berhasil!', 'Data Opname sukses tersimpan.', 'success'); document.getElementById('opEditId').value = ''; document.getElementById('opSysSebelum').value = ''; document.getElementById('opSysTambah').value = ''; document.getElementById('opFisik').value = ''; calcOpname(); fetchSelisihData(); } 
-        else { PlayfulAlert.fire('Gagal', result ? result.message : 'Koneksi gagal', 'error'); }
-    } catch (err) { PlayfulAlert.fire('Error', err.toString(), 'error'); }
+        if(result && result.success) { 
+            PlayfulAlert.fire('Berhasil!', 'Data Opname sukses tersimpan.', 'success'); 
+            
+            // Bersihkan Form
+            document.getElementById('opEditId').value = ''; 
+            document.getElementById('opSysSebelum').value = ''; 
+            document.getElementById('opSysTambah').value = ''; 
+            document.getElementById('opFisik').value = ''; 
+            
+            calcOpname(); 
+            fetchSelisihData(); // Akan otomatis me-refresh tabel dan dasbor
+        } 
+        else { 
+            PlayfulAlert.fire('Gagal', result ? result.message : 'Koneksi gagal', 'error'); 
+        }
+    } catch (err) { 
+        PlayfulAlert.fire('Error', err.toString(), 'error'); 
+    }
 }
 
 // ==========================================
