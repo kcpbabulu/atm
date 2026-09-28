@@ -401,17 +401,15 @@ async function processEJ() {
     showProgressAlert('Membaca File EJ...', 'Sedang merakit jurnal mesin...');
     let processedFiles = 0;
 
-    // [PERBAIKAN 1]: Kamus Pemetaan Jaring Ganda (Double-Net Dictionary)
     const atmIdMap = {
         "346": "KTM12902",
         "075": "KTM12901",
-        "75": "KTM12901" // Antisipasi jika mesin / sistem membaca tanpa angka nol
+        "75": "KTM12901"
     };
 
     for (let file of files) {
         let text = await readFileAsText(file);
         
-        // [ANTI-ERROR] VALIDASI FILE TERTUKAR
         if (!text.includes("TRANSACTION START") && !text.includes("PIN ENTERED") && !text.includes("EMV AID")) {
             Swal.close();
             return PlayfulAlert.fire('File Tertukar!', `File <b>${file.name}</b> sepertinya BUKAN file Jurnal Mesin. Pastikan ini bukan file GL.`, 'error');
@@ -420,7 +418,20 @@ async function processEJ() {
         const lines = text.split('\n');
         let currentTx = {}; let isLookingForJumlah = false; let lastValidAtmId = 'UNKNOWN'; let lastValidDate = '';
         
+        // 🚀 [PERBAIKAN 1]: Tracker untuk menebak Resi yang hilang (Khusus Transaksi Gagal)
+        let lastValidResi = 0; 
+        
         function saveCurrentTransaction() {
+            // 🚀 [PERBAIKAN 2]: Jika transaksi GAGAL dan Resi tidak tercetak, kita TEBAK urutan Resinya!
+            if (!currentTx.noResi && currentTx.status && currentTx.status.includes("GAGAL")) {
+                if (lastValidResi > 0) {
+                    lastValidResi++; // Lanjutkan urutan resi sebelumnya (Misal: 8491 menjadi 8492)
+                    currentTx.noResi = lastValidResi.toString();
+                } else {
+                    currentTx.noResi = "GAGAL_TANPA_RESI";
+                }
+            }
+
             if (currentTx.noResi) {
                 if (!currentTx.tanggal) currentTx.tanggal = lastValidDate;
                 if (currentTx.cashTaken) currentTx.status = "SUKSES";
@@ -444,7 +455,14 @@ async function processEJ() {
 
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i].trim();
-            if (line.includes("<- TRANSACTION END") || line.includes("-> TRANSACTION START") || line.includes("EMV AID ") || line.includes("PIN ENTERED") || line.includes("TRACK 2 DATA")) { if (currentTx.noResi) saveCurrentTransaction(); }
+            
+            // 🚀 [PERBAIKAN 3]: Picu penyimpanan JIKA ada indikator akhir transaksi DAN (punya resi ATAU statusnya gagal)
+            if (line.includes("<- TRANSACTION END") || line.includes("-> TRANSACTION START") || line.includes("EMV AID ") || line.includes("PIN ENTERED") || line.includes("TRACK 2 DATA")) { 
+                if (currentTx.noResi || (currentTx.status && currentTx.status.includes("GAGAL"))) {
+                    saveCurrentTransaction(); 
+                }
+            }
+            
             if (line.includes("CASH TAKEN")) currentTx.cashTaken = true;
             
             const dateMatch = line.match(/^(\d{2})\/(\d{2})\/(\d{2})\s+(\d{2}:\d{2}:\d{2})\s+([A-Z0-9]+)/);
@@ -452,15 +470,9 @@ async function processEJ() {
                 currentTx.tanggal = `20${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`; 
                 lastValidDate = currentTx.tanggal; 
                 
-                // Pastikan tidak ada spasi gaib yang menempel
                 let tempAtm = dateMatch[5].trim(); 
+                if (atmIdMap[tempAtm]) tempAtm = atmIdMap[tempAtm];
                 
-                // [PERBAIKAN 2]: Cek Kamus Pemetaan (Otomatis mengubah 075 atau 75 menjadi KTM12901)
-                if (atmIdMap[tempAtm]) {
-                    tempAtm = atmIdMap[tempAtm];
-                }
-                
-                // [PERBAIKAN 3]: Syarat dilonggarkan menjadi minimal 2 digit agar "75" bisa lolos
                 if (/[A-Z]/i.test(tempAtm) || tempAtm.length >= 2) {
                     lastValidAtmId = tempAtm; 
                 }
@@ -468,9 +480,16 @@ async function processEJ() {
             }
             
             const resiMatch = line.match(/(?:NO\s+RESI|NO\s+REF\.?|REFF\s+NO)\s*:?\s*(\d+)/i);
-            if (resiMatch) currentTx.noResi = parseInt(resiMatch[1], 10).toString();
+            if (resiMatch) {
+                currentTx.noResi = parseInt(resiMatch[1], 10).toString();
+                lastValidResi = parseInt(currentTx.noResi, 10); // Simpan resi sah terakhir
+            }
+            
             const smartEmvMatch = line.match(/SMART EMV\s+(\d+)/);
-            if (smartEmvMatch) currentTx.noResi = parseInt(smartEmvMatch[1], 10).toString();
+            if (smartEmvMatch) {
+                currentTx.noResi = parseInt(smartEmvMatch[1], 10).toString();
+                lastValidResi = parseInt(currentTx.noResi, 10);
+            }
             
             let textUpper = line.toUpperCase();
             if (textUpper.includes("PENARIKAN TUNAI") || textUpper.includes("TARIK TUNAI") || textUpper.includes("WITHDRAWAL")) currentTx.jenis = "TARIK TUNAI";
@@ -478,6 +497,13 @@ async function processEJ() {
             else if (textUpper.includes("PEMBELIAN") || textUpper.includes("PEMBAYARAN") || textUpper.includes("VOUCHER") || textUpper.includes("PAYMENT") || textUpper.includes("TOKEN")) currentTx.jenis = "PEMBAYARAN";
             else if (textUpper.includes("INFORMASI SALDO") || textUpper.includes("UBAH/GANTI PIN") || textUpper.includes("PIN CHANGE") || textUpper.includes("PIN SUCCESSFULLY") || textUpper.includes("FORCE CHANGE PIN")) { currentTx.jenis = "NON-FINANSIAL"; currentTx.status = "NON-FINANSIAL"; }
             
+            // 🚀 [PERBAIKAN 4]: Tangkap Nominal dari tombol yang diketik Nasabah untuk transaksi yang gagal!
+            const amountEnteredMatch = textUpper.match(/AMOUNT\s+(\d+)\s+ENTERED/);
+            if (amountEnteredMatch && !currentTx.nominal) {
+                // Menghilangkan 2 digit sen di belakang (Misal: 250000000 -> 2500000)
+                currentTx.nominal = parseFloat(amountEnteredMatch[1]) / 100; 
+            }
+
             if ((textUpper.includes("JUMLAH") || textUpper.includes("AMOUNT") || textUpper.includes("TOTAL")) && !textUpper.includes("ENTERED") && !textUpper.includes("SALDO")) {
                 isLookingForJumlah = true; const inlineJumlah = line.match(/(?:RP\.?|:|\.)\s*([\d,]+(?:\.\d+)?)/i);
                 if (inlineJumlah) { currentTx.nominal = parseFloat(inlineJumlah[1].replace(/,/g, '')); isLookingForJumlah = false; }
@@ -494,7 +520,12 @@ async function processEJ() {
             errorKeywords.forEach(err => { if (textUpper.includes(err) && !currentTx.cashTaken) currentTx.status = "GAGAL - " + err; });
             if (line.match(/TRANSACTION \d+ FAILED/i) && !currentTx.cashTaken) currentTx.status = "GAGAL - TRANSACTION FAILED";
         }
-        if (currentTx.noResi) saveCurrentTransaction();
+        
+        // Pastikan sisa transaksi di baris paling bawah tetap tersimpan
+        if (currentTx.noResi || (currentTx.status && currentTx.status.includes("GAGAL"))) {
+            saveCurrentTransaction();
+        }
+        
         processedFiles++;
         updateProgress((processedFiles / files.length) * 100);
     }
