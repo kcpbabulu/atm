@@ -1330,7 +1330,7 @@ async function fetchOpnameHistory() {
 }
 
 // ==========================================
-// RENDER TABEL RIWAYAT OPNAME FISIK
+// RENDER TABEL RIWAYAT OPNAME FISIK (INTERAKTIF)
 // ==========================================
 function renderOpnameTable() {
     const tbody = document.getElementById('tableBodyOpname');
@@ -1339,7 +1339,9 @@ function renderOpnameTable() {
     let raw = globalOpnameData || [];
     const term = document.getElementById('filterAtmOp') ? document.getElementById('filterAtmOp').value.toLowerCase() : '';
     const tgl = document.getElementById('filterTglOp') ? document.getElementById('filterTglOp').value : '';
+    const sortOrder = document.getElementById('sortWaktuOp') ? document.getElementById('sortWaktuOp').value : 'desc';
 
+    // 1. Filter Data
     let filtered = raw.filter(r => {
         let match = true;
         if (term) match = match && String(r[2]).toLowerCase().includes(term);
@@ -1347,40 +1349,56 @@ function renderOpnameTable() {
         return match;
     });
 
+    // 2. Sorting Data berdasarkan Waktu Spesifik (Jam & Menit)
+    filtered.sort((a, b) => {
+        let dateA = new Date(String(a[1]).replace(' ', 'T'));
+        let dateB = new Date(String(b[1]).replace(' ', 'T'));
+        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+
+    // 3. Paginate Data
     const pageData = filtered.slice((pageState.opname - 1) * PAGE_SIZE, pageState.opname * PAGE_SIZE);
     
+    // Tampilan Kosong (Empty State)
     if (pageData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-3 d-block mb-1"></i> Belum ada data Berita Acara Opname.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-25"></i> <span class="fw-bold">Tidak ada Berita Acara</span><br><small>Riwayat opname fisik kosong atau tidak sesuai pencarian.</small></td></tr>`;
         document.getElementById('paginationOpname').innerHTML = '';
         return;
     }
 
-    tbody.innerHTML = pageData.map(r => {
+    // 4. Render Baris Interaktif
+    tbody.innerHTML = pageData.map((r, index) => {
         let id = r[0];
-        let waktu = String(r[1]).substring(0, 16);
+        let waktu = String(r[1]).substring(0, 16).replace('T', ' Pukul '); // Mempercantik format tanggal
         let atm = String(r[2]).trim().toUpperCase();
         let selisih = parseFloat(r[7]) || 0;
         
-        let badgeFisik = selisih === 0 ? `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 shadow-sm">BALANCE</span>` :
-                         selisih > 0 ? `<span class="badge bg-success rounded-pill px-3 shadow-sm">LEBIH ${formatRp(selisih)}</span>` : 
-                                       `<span class="badge bg-danger rounded-pill px-3 shadow-sm">KURANG ${formatRp(Math.abs(selisih))}</span>`;
+        let badgeFisik = selisih === 0 
+            ? `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 shadow-sm py-2">BALANCE</span>` 
+            : (selisih > 0 
+                ? `<span class="badge bg-success rounded-pill px-3 shadow-sm py-2"><i class="bi bi-arrow-up-circle me-1"></i> LEBIH ${formatRp(selisih)}</span>` 
+                : `<span class="badge bg-danger rounded-pill px-3 shadow-sm py-2"><i class="bi bi-arrow-down-circle me-1"></i> KURANG ${formatRp(Math.abs(selisih))}</span>`);
 
-        let statusAI = selisih === 0 ? `<span class="text-muted small fw-bold">-</span>` : `<span class="small fw-bold text-warning">Tersisa: ${formatRp(Math.abs(selisih))}</span>`;
+        let statusAI = selisih === 0 
+            ? `<span class="text-muted small fw-bold"><i class="bi bi-check2-circle text-success fs-5 align-middle"></i> Tuntas</span>` 
+            : `<span class="small fw-bold text-warning"><i class="bi bi-hourglass-split"></i> Sisa: ${formatRp(Math.abs(selisih))}</span>`;
 
         const rawStr = encodeURIComponent(JSON.stringify(r));
+        
+        // Kalkulasi delay untuk efek domino animasi saat baris muncul
+        let animDelay = (index * 0.05).toFixed(2);
 
         return `
-            <tr>
-                <td class="fw-medium text-secondary ps-3" style="font-size:0.8rem">${waktu}</td>
-                <td><span class="badge bg-light text-dark border rounded-pill shadow-sm px-3">${atm}</span></td>
+            <tr class="align-middle fade-in table-clickable" style="animation-delay: ${animDelay}s; cursor: pointer;">
+                <td class="fw-bold text-dark ps-3 tabular-nums" style="font-size:0.85rem"><i class="bi bi-clock-history text-muted me-1"></i> ${waktu}</td>
+                <td><span class="badge bg-light text-primary border border-primary-subtle rounded-pill shadow-sm px-3 py-2"><i class="bi bi-hdd-rack me-1"></i> ${atm}</span></td>
                 <td>${badgeFisik}</td>
                 <td>${statusAI}</td>
                 <td class="text-center pe-3">
                     <div class="d-flex justify-content-center gap-2">
-                        <!-- Tombol Edit Dikembalikan -->
-                        <button class="btn btn-sm btn-primary rounded-pill fw-bold shadow-sm bouncy-hover px-3" onclick="editOpname('${rawStr}')" title="Edit Data"><i class="bi bi-pencil-square me-1"></i> Edit</button>
-                        <button class="btn btn-sm btn-dark rounded-pill fw-bold shadow-sm bouncy-hover px-3" onclick="printRiwayatBAOpname('${rawStr}')" title="Cetak Berita Acara"><i class="bi bi-printer-fill"></i></button>
-                        <button class="btn btn-sm btn-outline-danger rounded-pill fw-bold shadow-sm bouncy-hover px-2" onclick="deleteOpname('${id}')" title="Hapus Data"><i class="bi bi-trash-fill"></i></button>
+                        <button class="btn btn-sm btn-primary rounded-pill fw-bold shadow-sm bouncy-hover px-3" onclick="event.stopPropagation(); editOpname('${rawStr}')" title="Edit Data"><i class="bi bi-pencil-square"></i></button>
+                        <button class="btn btn-sm btn-dark rounded-pill fw-bold shadow-sm bouncy-hover px-3" onclick="event.stopPropagation(); printRiwayatBAOpname('${rawStr}')" title="Cetak Berita Acara"><i class="bi bi-printer-fill"></i></button>
+                        <button class="btn btn-sm btn-outline-danger rounded-pill fw-bold shadow-sm bouncy-hover px-2" onclick="event.stopPropagation(); deleteOpname('${id}')" title="Hapus Data"><i class="bi bi-trash-fill"></i></button>
                     </div>
                 </td>
             </tr>
