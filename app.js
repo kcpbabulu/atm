@@ -550,28 +550,6 @@ async function sendToBackend(action, data) {
     }
 }
 
-async function triggerAnalysis() {
-    showProgressAlert('Analisa AI Berjalan...', 'Sedang mencocokkan data lintas bulan. Ini mungkin memakan waktu beberapa detik...');
-    startFakeProgress(92);
-    
-    try {
-        const result = await apiCall('analyze');
-        stopFakeProgress();
-        
-        setTimeout(() => {
-            if(result && result.success) {
-                const alertMsg = result.data.infoMsg ? result.data.infoMsg : "Perhitungan bulan ini berhasil dimuat.";
-                const iconType = alertMsg.includes('ditangguhkan') ? 'info' : 'success';
-                PlayfulAlert.fire('Analisa Selesai', alertMsg, iconType);
-                globalSelisihData = result.data.tableData;
-                renderSelisihTablesFiltered(); 
-            } else PlayfulAlert.fire('Gagal', result ? result.message : 'Koneksi terputus', 'error');
-        }, 500);
-    } catch (err) { 
-        Swal.close();
-        PlayfulAlert.fire('Error', err.toString(), 'error'); 
-    }
-}
 
 function renderUploadHistory() {
     if(!databaseData.gl && !databaseData.ej) return;
@@ -614,12 +592,91 @@ function renderHistoryDetailTable() {
 // ==========================================
 
 
+// --- FUNGSI PELINDUNG (PENCEGAH FALSE POSITIVE) ---
+function bersihkanDataPalsu(selisihDataRaw) {
+    if (!selisihDataRaw || !databaseData || !databaseData.gl || !databaseData.ej) return selisihDataRaw;
+    
+    // Buat index pencarian super cepat
+    let glIndex = new Map();
+    databaseData.gl.forEach(r => {
+        // Gabungkan Mesin + Resi murni angka
+        let key = String(r[2]).trim() + "_" + String(r[3]).replace(/\D/g, ''); 
+        glIndex.set(key, Math.abs(parseFloat(r[4]) || 0));
+    });
+
+    let ejIndex = new Map();
+    databaseData.ej.forEach(r => {
+        // Gabungkan Mesin + Resi murni angka (Hanya yg SUKSES)
+        if (String(r[5]).toUpperCase() === 'SUKSES') {
+            let key = String(r[2]).trim() + "_" + String(r[3]).replace(/\D/g, ''); 
+            ejIndex.set(key, Math.abs(parseFloat(r[4]) || 0));
+        }
+    });
+
+    // Saring laporan selisih
+    return selisihDataRaw.filter(row => {
+        let isBelum = String(row[5]).toLowerCase() === 'belum';
+        if (!isBelum) return true; // Biarkan data yang sudah selesai (History)
+
+        let atm = String(row[1]).trim();
+        let resi = String(row[2]).replace(/\D/g, '');
+        let nominal = Math.abs(parseFloat(row[3]) || 0);
+        let jenis = String(row[4]).toUpperCase();
+        let key = atm + "_" + resi;
+
+        // Cek SILANG (Double Validation)
+        if (jenis === 'SELISIH KURANG') {
+            // Laporan: Uang keluar di EJ, tapi tak terpotong di GL
+            // Jika kenyataannya di GL ada potongannya (nominal sama), maka ini ALARM PALSU!
+            if (glIndex.has(key) && glIndex.get(key) === nominal) return false; 
+        } else if (jenis === 'SELISIH LEBIH') {
+            // Laporan: Terpotong di GL, tapi uang tidak keluar di EJ
+            // Jika kenyataannya di EJ tercatat sukses keluar (nominal sama), maka ini ALARM PALSU!
+            if (ejIndex.has(key) && ejIndex.get(key) === nominal) return false;
+        }
+        
+        return true; // Lolos filter (memang benar-benar selisih)
+    });
+}
+
+// --------------------------------------------------
+
+async function triggerAnalysis() {
+    showProgressAlert('Analisa AI Berjalan...', 'Sedang mencocokkan data lintas bulan. Ini mungkin memakan waktu beberapa detik...');
+    startFakeProgress(92);
+    
+    try {
+        const result = await apiCall('analyze');
+        stopFakeProgress();
+        
+        setTimeout(() => {
+            if(result && result.success) {
+                const alertMsg = result.data.infoMsg ? result.data.infoMsg : "Perhitungan bulan ini berhasil dimuat.";
+                const iconType = alertMsg.includes('ditangguhkan') ? 'info' : 'success';
+                PlayfulAlert.fire('Analisa Selesai', alertMsg, iconType);
+                
+                // [TINDAKAN]: Saring data dari backend sebelum ditampilkan
+                let rawData = result.data.tableData;
+                globalSelisihData = bersihkanDataPalsu(rawData); 
+                
+                renderSelisihTablesFiltered(); 
+            } else PlayfulAlert.fire('Gagal', result ? result.message : 'Koneksi terputus', 'error');
+        }, 500);
+    } catch (err) { 
+        Swal.close();
+        PlayfulAlert.fire('Error', err.toString(), 'error'); 
+    }
+}
+
 async function fetchSelisihData() {
     try {
         const resultSelisih = await apiCall('getSelisih');
         const resultOpname = await apiCall('getOpname');
         
-        if(resultSelisih && resultSelisih.success) globalSelisihData = resultSelisih.data;
+        if(resultSelisih && resultSelisih.success) {
+            // [TINDAKAN]: Saring data saat pertama kali aplikasi dibuka
+            globalSelisihData = bersihkanDataPalsu(resultSelisih.data); 
+        }
         if(resultOpname && resultOpname.success) globalOpnameData = resultOpname.data;
         
         let dAtms = new Set(), dResis = new Set(), dNoms = new Set();
