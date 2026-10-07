@@ -6,26 +6,50 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbzvtDw3a8yxtAT-OD4U84qY
 // 0. API CALL WRAPPER (SISTEM AUTO-RETRY KEBAL ERROR)
 // ==========================================
 async function apiCall(action, dataPayload = null, customPeriod = null) {
-    let period = customPeriod || getActivePeriod();
-    let payload = { action: action, periode: period };
+    const period = customPeriod || getActivePeriod();
+    const payload = { action, periode: period };
     if (dataPayload !== null) payload.data = dataPayload;
-
-    let retries = 3; // Maksimal coba 3 kali jika server Google menolak
+    const retries = 3;
+    let lastError;
     for (let i = 0; i < retries; i++) {
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timeoutId = controller ? setTimeout(() => controller.abort(), 30000) : null;
         try {
             const response = await fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                method: 'POST', body: JSON.stringify(payload),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                ...(controller ? { signal: controller.signal } : {})
             });
-            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-            return await response.json();
+            if (!response.ok) throw new Error(`Server merespons HTTP ${response.status}`);
+            const result = await response.json();
+            if (!result || result.success === false) throw new Error(result?.message || 'Permintaan tidak berhasil diproses.');
+            return result;
         } catch (err) {
-            if (i === retries - 1) throw err; // Lempar error hanya jika sudah 3x gagal
-            await new Promise(res => setTimeout(res, 1000 * (i + 1))); // Jeda 1 detik, lalu 2 detik sebelum nembak ulang
-        }
+            lastError = err;
+            if (i === retries - 1) break;
+            await new Promise(resolve => setTimeout(resolve, 700 * (i + 1)));
+        } finally { if (timeoutId) clearTimeout(timeoutId); }
     }
+    console.error(`[API:${action}]`, lastError);
+    throw new Error(lastError?.name === 'AbortError' ? 'Permintaan terlalu lama. Periksa koneksi lalu coba kembali.' : (lastError?.message || 'Koneksi ke server gagal.'));
 }
+
+// Penguatan UX global: cegah submit ganda dan berikan fallback error yang konsisten.
+window.__atm129Busy = window.__atm129Busy || new Set();
+window.atm129RunOnce = async function(key, operation) {
+    if (window.__atm129Busy.has(key)) return;
+    window.__atm129Busy.add(key);
+    try { return await operation(); } finally { window.__atm129Busy.delete(key); }
+};
+window.addEventListener('online', () => {
+    const notice = document.getElementById('connectionStatus');
+    if (notice) { notice.textContent = 'Koneksi kembali tersedia'; notice.classList.remove('d-none'); setTimeout(() => notice.classList.add('d-none'), 3500); }
+});
+window.addEventListener('offline', () => {
+    let notice = document.getElementById('connectionStatus');
+    if (!notice) { notice = document.createElement('div'); notice.id = 'connectionStatus'; notice.className = 'connection-status'; notice.setAttribute('role','status'); document.body.appendChild(notice); }
+    notice.textContent = 'Koneksi internet terputus. Perubahan belum tentu tersimpan.'; notice.classList.remove('d-none');
+});
 
 // ==========================================
 // 1. STATE MANAGEMENT, THEME & PAGINATION
