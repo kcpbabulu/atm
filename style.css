@@ -534,3 +534,25 @@ img, canvas, svg { max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
   #periodSyncStatus, #globalPeriod { transition: none !important; }
 }
+
+
+/* Header period selector — high-contrast, precision-friendly */
+.month-picker-container {
+    display:flex; align-items:center; gap:10px; min-height:48px; width:clamp(205px,23vw,270px); max-width:none;
+    padding:6px 12px; border:1px solid rgba(255,255,255,.48); border-radius:16px; color:#10264a;
+    background:linear-gradient(135deg,#fff 0%,#eef5ff 58%,#dceaff 100%);
+    box-shadow:0 5px 18px rgba(2,12,35,.22),inset 0 1px 0 rgba(255,255,255,.9); position:relative;
+    transition:box-shadow .18s ease,transform .18s ease,border-color .18s ease;
+}
+.month-picker-container:hover {box-shadow:0 8px 24px rgba(2,12,35,.30),inset 0 1px 0 #fff;transform:translateY(-1px)}
+.month-picker-container:focus-within {border-color:#ffd166;box-shadow:0 0 0 3px rgba(255,209,102,.34),0 8px 24px rgba(2,12,35,.25)}
+.month-picker-icon {width:35px;height:35px;flex:0 0 35px;display:grid;place-items:center;border-radius:11px;color:#fff;font-size:1.05rem;background:linear-gradient(145deg,#164e9b,#2478d4);box-shadow:0 3px 9px rgba(22,78,155,.28)}
+.month-picker-copy {min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}
+.month-picker-caption {font-size:.58rem;font-weight:900;letter-spacing:.13em;color:#52709b;line-height:1.1}
+.month-picker-input {min-width:0;width:100%!important;max-width:none;height:22px;padding:0!important;border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;color:#10264a!important;font-size:.94rem;font-weight:900;line-height:1.2;cursor:pointer}
+.month-picker-input::-webkit-calendar-picker-indicator {cursor:pointer;opacity:.8}
+.month-picker-chevron {color:#3568a6;font-size:.72rem;padding-inline:2px}
+#globalPeriod[aria-busy="true"] {opacity:.55;pointer-events:none}
+@media(max-width:575.98px) {.month-picker-container{width:184px;min-height:43px;padding:4px 8px;gap:7px;border-radius:13px}.month-picker-icon{width:30px;height:30px;flex-basis:30px;font-size:.95rem;border-radius:9px}.month-picker-caption{font-size:.52rem;letter-spacing:.1em}.month-picker-input{font-size:.83rem;height:20px}.month-picker-chevron{display:none}}
+@media(max-width:380px) {.month-picker-container{width:158px;padding-inline:6px;gap:5px}.month-picker-icon{width:27px;height:27px;flex-basis:27px}.month-picker-input{font-size:.75rem}}
+@media(prefers-reduced-motion:reduce) {.month-picker-container{transition:none}.month-picker-container:hover{transform:none}}
