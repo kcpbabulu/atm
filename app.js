@@ -1031,12 +1031,111 @@ function generateBA(rawStr) {
         debetContainer.innerHTML = `${rekNomor}<br><small>${rekNama}</small>`;
     }
     
+    // Sinkronkan data ke format formulir fisik 3 ply (sheet Excel BALIKIN ATM).
+    populateBA3PlyTemplate({
+        atmId, resi, nominalRaw, detail, reasonText, tglCetak, kota,
+        rekDebet: rekNomor, namaDebet: rekNama
+    });
+
     // Set QR Code Verifikasi B/A Penyelesaian mengarah ke Frontend
     let frontendUrl = window.location.origin + window.location.pathname;
     let qrData = encodeURIComponent(`${frontendUrl}?verify=ba&resi=${resi}&atm=${atmId}`);
     document.getElementById('qrBAPenyelesaian').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
 
     new bootstrap.Modal(document.getElementById('beritaAcaraModal')).show();
+}
+
+
+function populateBA3PlyTemplate(data) {
+    const set = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value == null ? '' : String(value);
+    };
+    const safe = (v, fallback = '—') => String(v == null || v === '' ? fallback : v);
+    const leftLogo = document.getElementById('cetakKop_logoKiri1');
+    const rightLogo = document.getElementById('cetakKop_logoKanan1');
+    const targetLeft = document.getElementById('cetak3PlyLogoKiri');
+    const targetRight = document.getElementById('cetak3PlyLogoKanan');
+    if (targetLeft && leftLogo && leftLogo.src && leftLogo.style.display !== 'none') targetLeft.src = leftLogo.src;
+    if (targetRight && rightLogo && rightLogo.src && rightLogo.style.display !== 'none') targetRight.src = rightLogo.src;
+
+    const branch = globalConfig.cfgCabang || 'Kantor Cabang Pembantu Babulu';
+    const branchUpper = branch.toUpperCase();
+    const city = document.getElementById('cetak_kota')?.innerText || branch.replace(/Kantor Cabang Pembantu|Kantor Cabang/ig, '').trim() || 'Babulu';
+    const amount = safe(data.nominalRaw, '0');
+    set('cetak3PlyCabang', branchUpper);
+    set('cetak3PlyCabangFooter', branchUpper);
+    set('cetak3PlyAtmTitle', safe(data.atmId, 'ATM'));
+    set('cetak3PlyRek', safe(data.detail?.rek));
+    set('cetak3PlyNama', safe(data.detail?.nama));
+    set('cetak3PlyResi', `${safe(data.resi, '')}${safe(data.atmId, '')}`.trim());
+    set('cetak3PlyTrx', safe(data.detail?.trx));
+    set('cetak3PlyProblem', safe(data.detail?.problem));
+    set('cetak3PlyNominalLabel', `Selisih: ${amount}.-`);
+    set('cetak3PlyKeterangan', safe(data.reasonText, 'Penyelesaian selisih ATM'));
+    set('cetak3PlyDebetRek', safe(data.rekDebet, '1299000105'));
+    set('cetak3PlyDebetNama', safe(data.namaDebet, 'KWJBN SGR-ATM DLM PENYELESAIAN'));
+    set('cetak3PlyKreditRek', safe(data.detail?.rek));
+    set('cetak3PlyKreditNama', safe(data.detail?.nama));
+    set('cetak3PlyJurnalNominal', amount);
+    set('cetak3PlyJurnalKet', safe(data.detail?.problem));
+    set('cetak3PlyKota', city);
+    set('cetak3PlyTanggal', safe(data.tglCetak));
+    set('cetak3PlyAdmin', safe(data.detail?.admin || globalConfig.cfgAdmin, 'FISTRI ARIANDINI'));
+    set('cetak3PlyTeller', safe(data.detail?.teller || globalConfig['cfgTeller_' + String(data.atmId).toUpperCase()], 'SUCI AINUL FITRI'));
+    set('cetak3PlyPimpinan', safe(data.detail?.pimpinan || globalConfig.cfgPimpinan, 'ENDY PRATAMA'));
+}
+
+function cetakBA3Ply(event = null) {
+    if (event) event.preventDefault();
+    const area = document.getElementById('printBA3PlyArea');
+    if (!area) return;
+    const originalParent = area.parentNode;
+    const originalNext = area.nextSibling;
+    const originalDisplay = area.style.display;
+    const originalTitle = document.title;
+    const originalBodyClass = document.body.classList.contains('ba3ply-printing');
+    const printStyle = document.createElement('style');
+    // Margin dari BALIKIN ATM: L 0.42", R 0.34", T 0.28", B 0.75".
+    // Size:auto sengaja dipakai karena workbook tidak menyimpan ukuran kertas.
+    printStyle.id = 'ba3PlyPageRule';
+    printStyle.textContent = '@page { size: auto; margin: 7.112mm 8.636mm 19.05mm 10.668mm; }';
+    document.head.appendChild(printStyle);
+
+    const suggested = getBeritaAcaraPdfFilename('printBAPenyelesaianArea').replace(/^BA_Penyelesaian_ATM_/, 'Form_3Ply_BA_ATM_');
+    document.title = suggested;
+    area.style.display = 'block';
+    area.setAttribute('aria-hidden', 'false');
+    document.body.appendChild(area);
+    document.body.classList.add('ba3ply-printing');
+
+    const hidden = [];
+    Array.from(document.body.children).forEach(el => {
+        if (el !== area && !['SCRIPT', 'STYLE', 'LINK'].includes(el.tagName)) {
+            hidden.push({el, display: el.style.display});
+            el.style.display = 'none';
+        }
+    });
+
+    let restored = false;
+    const restore = () => {
+        if (restored) return;
+        restored = true;
+        hidden.forEach(item => item.el.style.display = item.display);
+        if (originalNext && originalNext.parentNode === originalParent) originalParent.insertBefore(area, originalNext);
+        else originalParent.appendChild(area);
+        area.style.display = originalDisplay;
+        area.setAttribute('aria-hidden', 'true');
+        if (!originalBodyClass) document.body.classList.remove('ba3ply-printing');
+        document.title = originalTitle;
+        printStyle.remove();
+        window.removeEventListener('afterprint', restore);
+    };
+    window.addEventListener('afterprint', restore);
+    setTimeout(() => {
+        window.print();
+        setTimeout(restore, 900);
+    }, 150);
 }
 
 function previewBAOpname() {
