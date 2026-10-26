@@ -400,7 +400,13 @@ function showPage(pageId) {
 }
 
 document.getElementById('themeToggle').addEventListener('click', () => {
-    const html = document.documentElement; html.setAttribute('data-bs-theme', html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark');
+    const html = document.documentElement;
+    const next = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-bs-theme', next);
+    try { localStorage.setItem('atm129_theme', next); } catch (_) {}
+    const icon = document.querySelector('#themeToggle i');
+    if (icon) icon.className = next === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+    uxToast(next === 'dark' ? 'Tema gelap diaktifkan.' : 'Tema terang diaktifkan.', 'success', 1800);
 });
 
 function renderPagination(totalItems, currentPage, pageSize, callbackSection) {
@@ -2973,3 +2979,109 @@ function tourAnalisaStep5() {
         }
     });
 }
+
+/* =========================================================
+   ATM 129 UX: pencarian, aksesibilitas, status dan pintasan
+   Tidak menyimpan data nasabah/formulir ke localStorage.
+   ========================================================= */
+function uxToast(message, type = 'info', duration = 3200) {
+    const region = document.getElementById('uxToastRegion');
+    if (!region) return;
+    const toast = document.createElement('div');
+    toast.className = `ux-toast ${['success','warning','error'].includes(type) ? type : ''}`;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    toast.textContent = String(message || 'Selesai');
+    region.appendChild(toast);
+    window.setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(6px)'; window.setTimeout(() => toast.remove(), 220); }, duration);
+}
+
+function uxSetConnectionStatus() {
+    const online = navigator.onLine;
+    const statusText = document.getElementById('appLiveStatusText');
+    const dot = document.querySelector('#appLiveStatus .status-dot');
+    const connectionText = document.getElementById('uxConnectionText');
+    if (statusText) statusText.textContent = online ? 'Siap digunakan' : 'Offline — server tidak terjangkau';
+    if (dot) dot.classList.toggle('is-offline', !online);
+    if (connectionText) connectionText.textContent = online ? 'Perangkat terhubung ke jaringan; simpan data tetap menunggu konfirmasi server.' : 'Koneksi terputus. Data resmi belum tentu tersimpan; sambungkan kembali lalu muat ulang bila perlu.';
+}
+
+function uxUpdatePeriodEcho() {
+    const input = document.getElementById('globalPeriod');
+    const echo = document.getElementById('uxPeriodEcho');
+    if (!input || !echo || !input.value) return;
+    const [year, month] = input.value.split('-').map(Number);
+    const date = new Date(year, month - 1, 1);
+    echo.textContent = date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+}
+
+function uxRunQuickSearch(query) {
+    const panel = document.getElementById('uxSearchResults');
+    if (!panel) return;
+    const q = String(query || '').trim().toLocaleLowerCase('id-ID');
+    if (!q) { panel.classList.add('d-none'); panel.innerHTML = ''; return; }
+    const navTargets = [
+        {label:'Dasbor Utama', page:'dashboard', keywords:'dasbor dashboard ringkasan'},
+        {label:'Opname ATM', page:'opname', keywords:'opname fisik berita acara opname'},
+        {label:'Pusat Data', page:'pusatdata', keywords:'data gl ej upload master'},
+        {label:'Analisa Selisih', page:'analisa', keywords:'analisa selisih transaksi investigasi penyelesaian'},
+        {label:'Arsip Universal', page:'arsip', keywords:'arsip riwayat dokumen berita acara'},
+    ];
+    const navHits = navTargets.filter(x => `${x.label} ${x.keywords}`.toLocaleLowerCase('id-ID').includes(q));
+    const section = document.querySelector('.page-section:not(.d-none)');
+    const textHits = [];
+    if (section) {
+        const nodes = section.querySelectorAll('h1,h2,h3,h4,h5,h6,label,button,a,[role="button"]');
+        for (const el of nodes) {
+            const label = (el.innerText || el.getAttribute('aria-label') || '').trim().replace(/\s+/g,' ');
+            if (label.length > 2 && label.toLocaleLowerCase('id-ID').includes(q) && !textHits.some(x => x.label === label)) {
+                textHits.push({label:label.slice(0,100), el});
+                if (textHits.length >= 8) break;
+            }
+        }
+    }
+    panel.innerHTML = '';
+    const count = document.createElement('div'); count.className='search-count'; count.textContent = `${navHits.length + textHits.length} hasil pada menu dan halaman aktif`; panel.appendChild(count);
+    navHits.forEach(hit => {
+        const b=document.createElement('button'); b.type='button'; b.innerHTML=`<i class="bi bi-arrow-right-circle me-2 text-primary"></i>${hit.label}`;
+        b.addEventListener('click',()=>{ showPage(hit.page); panel.classList.add('d-none'); const input=document.getElementById('globalQuickSearch'); if(input) input.value=''; }); panel.appendChild(b);
+    });
+    textHits.forEach(hit => {
+        const b=document.createElement('button'); b.type='button'; b.innerHTML=`<i class="bi bi-search me-2 text-secondary"></i>${hit.label.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}`;
+        b.addEventListener('click',()=>{ panel.classList.add('d-none'); hit.el.scrollIntoView({behavior:'smooth',block:'center'}); hit.el.focus?.({preventScroll:true}); hit.el.classList.add('ux-search-highlight'); setTimeout(()=>hit.el.classList.remove('ux-search-highlight'),1600); }); panel.appendChild(b);
+    });
+    if (!navHits.length && !textHits.length) { const empty=document.createElement('div'); empty.className='search-count'; empty.textContent='Tidak ada kecocokan pada menu atau halaman aktif.'; panel.appendChild(empty); }
+    panel.classList.remove('d-none');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const savedTheme = localStorage.getItem('atm129_theme');
+        if (savedTheme === 'dark' || savedTheme === 'light') document.documentElement.setAttribute('data-bs-theme', savedTheme);
+    } catch (_) {}
+    const themeIcon = document.querySelector('#themeToggle i');
+    if (themeIcon) themeIcon.className = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+    uxSetConnectionStatus(); uxUpdatePeriodEcho();
+    window.addEventListener('online', () => { uxSetConnectionStatus(); uxToast('Koneksi jaringan kembali tersedia. Pastikan data yang tertunda sudah dikonfirmasi server.', 'success'); });
+    window.addEventListener('offline', () => { uxSetConnectionStatus(); uxToast('Koneksi terputus. Perubahan belum tentu tersimpan di server.', 'warning', 6000); });
+    document.getElementById('globalPeriod')?.addEventListener('change', uxUpdatePeriodEcho);
+    const search = document.getElementById('globalQuickSearch');
+    search?.addEventListener('input', e => uxRunQuickSearch(e.target.value));
+    search?.addEventListener('keydown', e => { if (e.key === 'Escape') { e.target.value=''; uxRunQuickSearch(''); e.target.blur(); } if (e.key === 'Enter') document.querySelector('#uxSearchResults button')?.click(); });
+    document.addEventListener('click', e => { const panel=document.getElementById('uxSearchResults'); if(panel && !panel.contains(e.target) && e.target !== search) panel.classList.add('d-none'); });
+    document.addEventListener('keydown', e => {
+        const tag = (e.target?.tagName || '').toLowerCase();
+        const typing = ['input','textarea','select'].includes(tag) || e.target?.isContentEditable;
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); search?.focus(); search?.select(); }
+        if (e.key === 'Escape') {
+            const panel=document.getElementById('uxSearchResults'); if(panel) panel.classList.add('d-none');
+            const activeModal=document.querySelector('.modal.show'); if(activeModal && window.bootstrap) bootstrap.Modal.getInstance(activeModal)?.hide();
+        }
+        if (!typing && e.altKey && e.key === '1') showPage('dashboard');
+        if (!typing && e.altKey && e.key === '2') showPage('opname');
+        if (!typing && e.altKey && e.key === '3') showPage('pusatdata');
+        if (!typing && e.altKey && e.key === '4') showPage('analisa');
+    });
+    // Jangan menganggap status browser online sebagai bukti server berhasil menyimpan data.
+    const originalChangePeriod = superApp.changePeriod;
+    superApp.changePeriod = async function() { uxToast('Memuat ulang data untuk periode terpilih…', 'info', 1800); try { const r=await originalChangePeriod.apply(this, arguments); uxUpdatePeriodEcho(); } finally { uxSetConnectionStatus(); } };
+});
