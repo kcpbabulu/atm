@@ -1012,7 +1012,10 @@ function generateBA(rawStr) {
     document.getElementById('cetak_nominal').innerText = nominalRaw; document.getElementById('cetak_rek').innerText = detail.rek;
     document.getElementById('cetak_nama').innerText = detail.nama; 
     
-    // [PERBAIKAN 1]: Menggabungkan Resi dan ID Mesin secara utuh
+    // Simpan metadata terpisah untuk nama file PDF (kolom cetak tetap mengikuti format BA).
+    const baPrintArea = document.getElementById('printBAPenyelesaianArea');
+    if (baPrintArea) { baPrintArea.dataset.resi = resi; baPrintArea.dataset.atmId = atmId; baPrintArea.dataset.baDate = detail.tglSelesai || tglTrx; }
+    // Format BA yang sudah digunakan: gabungan resi dan ID ATM.
     document.getElementById('cetak_resi').innerText = resi + atmId; 
     
     document.getElementById('cetak_trx').innerText = detail.trx; document.getElementById('cetak_problem').innerText = detail.problem;
@@ -1068,6 +1071,8 @@ function previewBAOpname() {
     safeSet('cetakTgl', `${dateObj.getDate()} ${bulanArr[dateObj.getMonth()]} ${dateObj.getFullYear()}`);
     safeSet('cetakJam', dateObj.toTimeString().substring(0,5)); 
     safeSet('cetakAtm', `${atmId.toUpperCase()} (${namaCabang})`);
+    const opnamePrintArea = document.getElementById('printBAOpnameArea');
+    if (opnamePrintArea) opnamePrintArea.dataset.atmId = atmId.toUpperCase();
     
     safeSet('cetakSysSebelum', formatNum(sSblm)); 
     safeSet('cetakSysTambah', formatNum(sTmbh)); 
@@ -1126,6 +1131,8 @@ function printRiwayatBAOpname(rawStr) {
     safeSet('cetakTgl', `${dateObj.getDate()} ${bulanArr[dateObj.getMonth()]} ${dateObj.getFullYear()}`); 
     safeSet('cetakJam', String(dateObj.toTimeString()).substring(0,5)); 
     safeSet('cetakAtm', `${atmId.toUpperCase()} (${namaCabang})`);
+    const opnamePrintArea = document.getElementById('printBAOpnameArea');
+    if (opnamePrintArea) opnamePrintArea.dataset.atmId = atmId.toUpperCase();
     
     safeSet('cetakSysSebelum', formatNum(sSblm)); 
     safeSet('cetakSysTambah', formatNum(sTmbh)); 
@@ -1183,14 +1190,47 @@ function calcOpname() {
 // ==========================================
 // FUNGSI PRINT PDF (DENGAN SOFT-REFRESH ANTI FREEZE)
 // ==========================================
+function normalizePdfFilenamePart(value, fallback = 'Tanpa_Keterangan') {
+    return String(value || fallback)
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, ' ')
+        .replace(/[\s._-]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .slice(0, 70) || fallback;
+}
+
+function getBeritaAcaraPdfFilename(areaId) {
+    const read = id => (document.getElementById(id)?.innerText || '').trim();
+    if (areaId === 'printBAPenyelesaianArea') {
+        const datePart = normalizePdfFilenamePart(read('cetak_tgl') || new Date().toISOString().slice(0, 10), 'Tanggal_Tidak_Diketahui');
+        const printArea = document.getElementById(areaId);
+        const resi = normalizePdfFilenamePart(printArea?.dataset.resi || read('cetak_resi'), 'Resi_Tidak_Diketahui');
+        const atm = normalizePdfFilenamePart(printArea?.dataset.atmId || read('cetak_atm_judul'), 'ATM_Tidak_Diketahui');
+        const ket = normalizePdfFilenamePart(read('cetak_keterangan'), 'Penyelesaian_Selisih');
+        return `BA_Penyelesaian_ATM_${datePart}_Selisih_${ket}_Resi_${resi}_ATM_${atm}`;
+    }
+    if (areaId === 'printBAOpnameArea') {
+        const datePart = normalizePdfFilenamePart(read('cetakTgl') || new Date().toISOString().slice(0, 10), 'Tanggal_Tidak_Diketahui');
+        const atm = normalizePdfFilenamePart(read('cetakAtm'), 'ATM_Tidak_Diketahui');
+        const ket = normalizePdfFilenamePart(read('baOpnameFilenameNote') || 'Opname_Fisik', 'Opname_Fisik');
+        return `BA_Opname_ATM_${datePart}_Opname_${ket}_Mesin_ATM_${atm}`;
+    }
+    if (areaId === 'printPipelineArea') return `Laporan_Pipeline_${normalizePdfFilenamePart(read('pipe_periode_text'), 'Bulanan')}`;
+    return `Dokumen_${normalizePdfFilenamePart(areaId, 'Berita_Acara')}`;
+}
+
 function cetakPDF(areaId, event = null) {
     if (event) event.preventDefault();
 
     const printArea = document.getElementById(areaId);
     if (!printArea) return;
 
-    const originalParent = printArea.parentNode; 
-    const originalNextSibling = printArea.nextSibling; 
+    const originalParent = printArea.parentNode;
+    const originalNextSibling = printArea.nextSibling;
+    const originalTitle = document.title;
+    const suggestedFilename = getBeritaAcaraPdfFilename(areaId);
+    document.title = suggestedFilename;
 
     // 1. Kunci kertas untuk mode cetak
     printArea.classList.add('print-active-area');
@@ -1214,7 +1254,8 @@ function cetakPDF(areaId, event = null) {
         isRestored = true;
 
         printArea.classList.remove('print-active-area');
-        
+        document.title = originalTitle;
+
         if (originalNextSibling) {
             originalParent.insertBefore(printArea, originalNextSibling);
         } else {
