@@ -37,10 +37,13 @@
             <div class="d-flex gap-2 align-items-center header-controls">
                 
                 <!-- MESIN WAKTU (PEMILIH BULAN) -->
-                <div class="d-flex align-items-center bg-white rounded-pill px-3 py-1 shadow-sm border border-light month-picker-container">
-                    <!-- Ikon ini disembunyikan di HP sangat kecil agar hemat ruang -->
-                    <i class="bi bi-calendar2-week-fill text-primary me-2 d-none d-sm-block"></i>
-                    <input type="month" id="globalPeriod" class="form-control form-control-sm border-0 bg-transparent fw-bolder text-dark p-0 month-picker-input" style="width: 115px; cursor: pointer; outline: none; box-shadow: none;" onchange="superApp.changePeriod()" title="Pilih Bulan Rekonsiliasi">
+                <div class="month-picker-container" role="group" aria-label="Periode rekonsiliasi">
+                    <span class="month-picker-icon"><i class="bi bi-calendar2-check-fill"></i></span>
+                    <div class="month-picker-copy">
+                        <span class="month-picker-caption">PERIODE AKTIF</span>
+                        <input type="month" id="globalPeriod" class="form-control form-control-sm month-picker-input" onchange="superApp.changePeriod()" title="Pilih bulan rekonsiliasi untuk seluruh halaman" aria-label="Pilih bulan rekonsiliasi">
+                    </div>
+                    <span class="month-picker-chevron"><i class="bi bi-chevron-down"></i></span>
                 </div>
                 
                 <!-- Garis Pembatas (Hanya tampil di PC/Tablet) -->
@@ -1342,7 +1345,7 @@
                 </div>
                 <div class="modal-footer rounded-0 py-2">
                     <button class="btn btn-outline-primary fw-bold shadow-sm bouncy-hover" onclick="exportHTMLToDoc('printBAPenyelesaianArea', 'BA_Penyelesaian')"><i class="bi bi-file-word-fill"></i> Download DOCX</button>
-                    <button class="btn btn-success fw-bold shadow-sm bouncy-hover" onclick="cetakPDF('printBAPenyelesaianArea', event)"><i class="bi bi-printer-fill"></i> Cetak A4</button>
+                    <button class="btn btn-success fw-bold shadow-sm bouncy-hover" onclick="cetakPDF('printBAPenyelesaianArea', event)" title="Pilih Save as PDF pada dialog cetak; nama file disarankan otomatis"><i class="bi bi-file-earmark-pdf-fill"></i> Simpan PDF / Cetak A4</button>
                 </div>
             </div>
         </div>
@@ -1475,9 +1478,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer rounded-0 py-2">
+                <div class="modal-footer rounded-0 py-2 flex-wrap">
+                    <div class="w-100 mb-2">
+                        <label for="baOpnameFilenameNote" class="form-label small fw-bold mb-1">Keterangan nama file (opsional)</label>
+                        <input id="baOpnameFilenameNote" class="form-control form-control-sm" maxlength="70" placeholder="Contoh: Pengisian_Kas_atau_Opname_Rutin" aria-label="Keterangan tambahan nama file PDF opname">
+                    </div>
                     <button class="btn btn-outline-primary fw-bold shadow-sm bouncy-hover" onclick="exportHTMLToDoc('printBAOpnameArea', 'BA_Opname_Fisik')"><i class="bi bi-file-word-fill"></i> Download DOCX</button>
-                    <button class="btn btn-success fw-bold shadow-sm bouncy-hover" onclick="cetakPDF('printBAOpnameArea', event)"><i class="bi bi-printer-fill"></i> Cetak A4</button>
+                    <button class="btn btn-success fw-bold shadow-sm bouncy-hover" onclick="cetakPDF('printBAOpnameArea', event)" title="Pilih Save as PDF pada dialog cetak; nama file disarankan otomatis"><i class="bi bi-file-earmark-pdf-fill"></i> Simpan PDF / Cetak A4</button>
                 </div>
             </div>
         </div>
