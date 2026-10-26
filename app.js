@@ -77,17 +77,67 @@ function getActivePeriod() {
 window.superApp = window.superApp || {};
 
 // SAAT USER MENGGANTI BULAN DI NAVBAR
-superApp.changePeriod = async function() {
-    PlayfulAlert.fire({ title: 'Berpindah Bulan...', text: 'Memuat data dari dimensi waktu yang dipilih.', allowOutsideClick: false });
-    PlayfulAlert.showLoading();
-    try {
-        await fetchDatabaseData();
-        await fetchSelisihData();
-        PlayfulAlert.close();
-    } catch (e) {
-        console.error("Gagal berpindah bulan:", e);
-        PlayfulAlert.fire('Koneksi Lemah', 'Google menolak memuat data bulan ini. Silakan coba klik/refresh lagi.', 'error');
+let periodRefreshSequence = 0;
+function setPeriodLoading(isLoading, message = '') {
+    let notice = document.getElementById('periodSyncStatus');
+    if (!notice) {
+        notice = document.createElement('div');
+        notice.id = 'periodSyncStatus';
+        notice.className = 'alert alert-info py-2 px-3 small rounded-3 d-none';
+        notice.setAttribute('role', 'status');
+        notice.setAttribute('aria-live', 'polite');
+        const main = document.querySelector('.main-content');
+        if (main) main.prepend(notice);
     }
+    notice.textContent = message || (isLoading ? 'Memuat data periode...' : 'Data periode diperbarui.');
+    notice.classList.toggle('d-none', !isLoading && !message);
+    notice.classList.toggle('alert-danger', !isLoading && !!message);
+    notice.classList.toggle('alert-info', isLoading || !message);
+}
+
+async function refreshAllPeriodData({showDialog = false} = {}) {
+    const sequence = ++periodRefreshSequence;
+    const period = getActivePeriod(); // Snapshot agar semua request memakai bulan yang sama.
+    const inputPeriod = document.getElementById('globalPeriod');
+    if (inputPeriod) inputPeriod.setAttribute('aria-busy', 'true');
+    setPeriodLoading(true, `Memuat data periode ${period.substring(0,2)}/${period.substring(2,6)}...`);
+    if (showDialog) {
+        PlayfulAlert.fire({ title: 'Memuat Periode', text: `Menyinkronkan data ${period.substring(0,2)}/${period.substring(2,6)} di seluruh halaman.`, allowOutsideClick: false, didOpen: () => PlayfulAlert.showLoading() });
+    }
+    try {
+        // Semua data yang mengikuti periode global dimuat pada satu alur.
+        await fetchDatabaseData(period);
+        if (sequence !== periodRefreshSequence) return; // Abaikan hasil jika pengguna sudah memilih bulan lain.
+        await fetchSelisihData(period);
+        if (sequence !== periodRefreshSequence) return;
+
+        // Reset filter tanggal yang mungkin tertinggal dari bulan sebelumnya.
+        const filterStart = document.getElementById('filterStart');
+        if (filterStart && filterStart.value && filterStart.value.substring(0, 7) !== (inputPeriod?.value || '')) filterStart.value = '';
+        const filterTglOp = document.getElementById('filterTglOp');
+        if (filterTglOp && filterTglOp.value && filterTglOp.value.substring(0, 7) !== (inputPeriod?.value || '')) filterTglOp.value = '';
+        const pipelineMonth = document.getElementById('inputBulanPipeline');
+        if (pipelineMonth) pipelineMonth.value = inputPeriod?.value || '';
+
+        // Render ulang semua komponen terkait periode setelah state data konsisten.
+        renderDataMaster(); renderSelisihTablesFiltered(); renderOpnameTable();
+        renderCalendar(); renderDashboard(); updateDataCompletenessBanner();
+        setPeriodLoading(false);
+        if (showDialog) PlayfulAlert.close();
+    } catch (e) {
+        if (sequence !== periodRefreshSequence) return;
+        console.error('Gagal memuat periode:', e);
+        setPeriodLoading(false, `Gagal memuat periode ${period.substring(0,2)}/${period.substring(2,6)}. Periksa koneksi/API lalu coba lagi.`);
+        if (showDialog) PlayfulAlert.fire('Data belum termuat', e.message || 'Gagal memuat data periode.', 'error');
+        throw e;
+    } finally {
+        if (sequence === periodRefreshSequence && inputPeriod) inputPeriod.removeAttribute('aria-busy');
+    }
+}
+
+superApp.changePeriod = async function() {
+    try { await refreshAllPeriodData({showDialog: true}); }
+    catch (e) { /* Pesan sudah ditampilkan di status dan dialog. */ }
 };
 
 function changePage(section, newPage) {
@@ -105,9 +155,9 @@ const formatNum = (angka) => (angka ? new Intl.NumberFormat('id-ID').format(angk
 const PlayfulAlert = Swal.mixin({ customClass: { popup: 'rounded-5 shadow-lg border-0', confirmButton: 'btn btn-primary rounded-pill px-4 fw-bold shadow-sm mx-1 bouncy-hover', cancelButton: 'btn btn-light rounded-pill px-4 fw-bold shadow-sm mx-1 bouncy-hover' }, buttonsStyling: false });
 
 document.addEventListener("DOMContentLoaded", () => {
-    getActivePeriod(); 
-    fetchConfig(); 
-    fetchDatabaseData(); 
+    getActivePeriod();
+    fetchConfig();
+    refreshAllPeriodData().catch(() => {});
     const settingModal = document.getElementById('modal-system-settings');
     if(settingModal) settingModal.addEventListener('show.bs.modal', renderTellerConfig);
 });
@@ -731,10 +781,10 @@ async function triggerAnalysis() {
     }
 }
 
-async function fetchSelisihData() {
+async function fetchSelisihData(period = getActivePeriod()) {
     try {
-        const resultSelisih = await apiCall('getSelisih');
-        const resultOpname = await apiCall('getOpname');
+        const resultSelisih = await apiCall('getSelisih', null, period);
+        const resultOpname = await apiCall('getOpname', null, period);
         
         if(resultSelisih && resultSelisih.success) {
             // [TINDAKAN]: Saring data saat pertama kali aplikasi dibuka
@@ -1275,11 +1325,11 @@ function showDetailPopup(rowDataStr) {
 // ==========================================
 // 6. ENGINE DATA MASTER 
 // ==========================================
-async function fetchDatabaseData() {
+async function fetchDatabaseData(period = getActivePeriod()) {
     const tbody = document.getElementById('tableBodyDataMaster');
     if(tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm text-primary mb-1"></div><br><small>Menyinkronkan Database...</small></td></tr>`;
     try {
-        const result = await apiCall('getDatabase');
+        const result = await apiCall('getDatabase', null, period);
         if(result && result.success) { databaseData = result.data; renderUploadHistory(); renderDataMaster(); updateDataCompletenessBanner(); renderCalendar(); renderDashboard();}
     } catch (err) { console.error("fetchDatabaseData Error:", err); throw err; }
 }
