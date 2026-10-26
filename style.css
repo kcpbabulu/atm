@@ -556,3 +556,49 @@ img, canvas, svg { max-width: 100%; }
 @media(max-width:575.98px) {.month-picker-container{width:184px;min-height:43px;padding:4px 8px;gap:7px;border-radius:13px}.month-picker-icon{width:30px;height:30px;flex-basis:30px;font-size:.95rem;border-radius:9px}.month-picker-caption{font-size:.52rem;letter-spacing:.1em}.month-picker-input{font-size:.83rem;height:20px}.month-picker-chevron{display:none}}
 @media(max-width:380px) {.month-picker-container{width:158px;padding-inline:6px;gap:5px}.month-picker-icon{width:27px;height:27px;flex-basis:27px}.month-picker-input{font-size:.75rem}}
 @media(prefers-reduced-motion:reduce) {.month-picker-container{transition:none}.month-picker-container:hover{transform:none}}
+
+
+/* ================================================
+   FORM 3 PLY: layout turunan sheet Excel BALIKIN ATM
+   Margin halaman diatur dinamis oleh cetakBA3Ply()
+   ================================================ */
+.ba-3ply-print { display:none; color:#000; background:#fff; font-family:Arial,Helvetica,sans-serif; font-size:9pt; line-height:1.18; box-sizing:border-box; }
+.ba-3ply-print *, .ba-3ply-print *::before, .ba-3ply-print *::after { box-sizing:border-box; }
+.ba-3ply-print .ba3-header { width:100%; border-collapse:collapse; table-layout:fixed; margin:0 0 7mm; }
+.ba-3ply-print .ba3-header td { border:0; padding:0; vertical-align:middle; }
+.ba-3ply-print .ba3-logo { width:22%; }
+.ba-3ply-print .ba3-left { text-align:left; }
+.ba-3ply-print .ba3-right { text-align:right; }
+.ba-3ply-print .ba3-logo img { max-width:36mm; max-height:16mm; object-fit:contain; }
+.ba-3ply-print .ba3-bank-title { width:56%; text-align:center; font-weight:700; color:#0070c0; font-size:9pt; line-height:1.2; }
+.ba-3ply-print .ba3-title { text-align:center; font-weight:700; font-size:10pt; line-height:1.2; margin:0 0 13mm; }
+.ba-3ply-print .ba3-title div:last-child { margin-top:1mm; }
+.ba-3ply-print .ba3-details { width:100%; margin:0 0 8mm; font-size:9pt; }
+.ba-3ply-print .ba3-line { display:grid; grid-template-columns:34mm 4mm minmax(0,1fr); gap:0; min-height:5.2mm; align-items:start; }
+.ba-3ply-print .ba3-line span:first-child { white-space:nowrap; }
+.ba-3ply-print .ba3-line strong, .ba-3ply-print .ba3-line span:last-child { overflow-wrap:anywhere; }
+.ba-3ply-print .ba3-errorline { min-height:7mm; font-weight:700; margin:0 0 1mm; }
+.ba-3ply-print .ba3-section-title { font-weight:700; margin:0 0 3mm; }
+.ba-3ply-print .ba3-journal { width:100%; border-collapse:collapse; table-layout:fixed; margin:0 0 6mm; }
+.ba-3ply-print .ba3-journal th, .ba-3ply-print .ba3-journal td { border:1px solid #000; padding:1.5mm 1mm; text-align:center; vertical-align:top; overflow-wrap:anywhere; }
+.ba-3ply-print .ba3-journal th { font-weight:700; }
+.ba-3ply-print .ba3-journal th:nth-child(1), .ba-3ply-print .ba3-journal th:nth-child(2) { width:22%; }
+.ba-3ply-print .ba3-journal th:nth-child(3) { width:17%; }
+.ba-3ply-print .ba3-journal th:nth-child(4) { width:39%; }
+.ba-3ply-print .ba3-journal tbody td { height:24mm; }
+.ba-3ply-print .ba3-closing { margin:0 0 6mm; text-align:justify; line-height:1.25; }
+.ba-3ply-print .ba3-date { text-align:center; margin:0 0 2mm; }
+.ba-3ply-print .ba3-team { text-align:center; font-weight:700; margin:0 0 17mm; }
+.ba-3ply-print .ba3-signatures { width:100%; table-layout:fixed; border-collapse:collapse; margin:0 0 8mm; text-align:center; }
+.ba-3ply-print .ba3-signatures td { width:50%; border:0; padding:0 2mm; vertical-align:top; }
+.ba-3ply-print .ba3-signatures strong, .ba-3ply-print .ba3-manager strong { text-decoration:underline; }
+.ba-3ply-print .ba3-signatures span, .ba-3ply-print .ba3-manager span { display:inline-block; margin-top:1mm; }
+.ba-3ply-print .ba3-manager-caption { text-align:center; font-weight:700; line-height:1.3; margin:0 0 13mm; }
+.ba-3ply-print .ba3-manager-caption strong { font-weight:700; }
+.ba-3ply-print .ba3-manager { text-align:center; }
+@media print {
+    body.ba3ply-printing { background:#fff !important; margin:0 !important; padding:0 !important; }
+    body.ba3ply-printing > * { display:none !important; }
+    body.ba3ply-printing > #printBA3PlyArea { display:block !important; position:static !important; width:100% !important; max-width:none !important; margin:0 !important; padding:0 !important; overflow:visible !important; }
+    #printBA3PlyArea { display:block !important; }
+}
