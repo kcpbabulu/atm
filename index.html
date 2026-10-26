@@ -1343,12 +1343,68 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer rounded-0 py-2">
+                <div class="modal-footer rounded-0 py-2 flex-wrap">
+                    <small class="text-muted me-auto">Form 3 ply: pada dialog printer pilih ukuran kertas sesuai formulir fisik, skala 100% / Actual size, dan jangan gunakan Fit to page.</small>
                     <button class="btn btn-outline-primary fw-bold shadow-sm bouncy-hover" onclick="exportHTMLToDoc('printBAPenyelesaianArea', 'BA_Penyelesaian')"><i class="bi bi-file-word-fill"></i> Download DOCX</button>
+                    <button class="btn btn-warning fw-bold shadow-sm bouncy-hover" onclick="cetakBA3Ply(event)" title="Cetak langsung dengan margin formulir BALIKIN ATM; pilih ukuran kertas sesuai formulir fisik 3 ply"><i class="bi bi-printer-fill"></i> Cetak Form 3 Ply</button>
                     <button class="btn btn-success fw-bold shadow-sm bouncy-hover" onclick="cetakPDF('printBAPenyelesaianArea', event)" title="Pilih Save as PDF pada dialog cetak; nama file disarankan otomatis"><i class="bi bi-file-earmark-pdf-fill"></i> Simpan PDF / Cetak A4</button>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- FORM CETAK 3 PLY - REPLIKA LAYOUT SHEET "BALIKIN ATM"                     -->
+    <!-- Margin berdasarkan file BA_ATM.xlsx: kiri 0.42", kanan 0.34",              -->
+    <!-- atas 0.28", bawah 0.75". Ukuran kertas dipilih mengikuti formulir fisik. -->
+    <!-- ========================================================================= -->
+    <div id="printBA3PlyArea" class="ba-3ply-print" aria-hidden="true">
+        <table class="ba3-header">
+            <tr>
+                <td class="ba3-logo ba3-left"><img id="cetak3PlyLogoKiri" alt=""></td>
+                <td class="ba3-bank-title">
+                    <div>PT BANK PEMBANGUNAN DAERAH</div>
+                    <div>KALIMANTAN TIMUR DAN KALIMANTAN UTARA</div>
+                    <div id="cetak3PlyCabang">KANTOR CABANG PEMBANTU BABULU</div>
+                </td>
+                <td class="ba3-logo ba3-right"><img id="cetak3PlyLogoKanan" alt=""></td>
+            </tr>
+        </table>
+        <div class="ba3-title">
+            <div>BERITA ACARA</div>
+            <div>PENYELESAIAN SELISIH ATM</div>
+            <div id="cetak3PlyAtmTitle">ATM</div>
+        </div>
+        <div class="ba3-errorline"><strong id="cetak3PlyNominalLabel"></strong></div>
+        <div class="ba3-details">
+            <div class="ba3-line"><span>No. Rekening</span><b>:</b><strong id="cetak3PlyRek"></strong></div>
+            <div class="ba3-line"><span>Nama</span><b>:</b><strong id="cetak3PlyNama"></strong></div>
+            <div class="ba3-line"><span>No. Referensi</span><b>:</b><strong id="cetak3PlyResi"></strong></div>
+            <div class="ba3-line"><span>Transaksi</span><b>:</b><span id="cetak3PlyTrx"></span></div>
+            <div class="ba3-line"><span>Problem</span><b>:</b><span id="cetak3PlyProblem"></span></div>
+        </div>
+        <div class="ba3-errorline"><strong>Keterangan: </strong><span id="cetak3PlyKeterangan"></span></div>
+        <div class="ba3-section-title">Penyelesaian : Dilakukan jurnal sebagai berikut :</div>
+        <table class="ba3-journal">
+            <thead><tr><th>Debet</th><th>Kredit</th><th>Nominal</th><th>Keterangan</th></tr></thead>
+            <tbody><tr>
+                <td><strong id="cetak3PlyDebetRek"></strong><br><span id="cetak3PlyDebetNama"></span></td>
+                <td><strong id="cetak3PlyKreditRek"></strong><br><span id="cetak3PlyKreditNama"></span></td>
+                <td id="cetak3PlyJurnalNominal"></td>
+                <td id="cetak3PlyJurnalKet"></td>
+            </tr></tbody>
+        </table>
+        <p class="ba3-closing">Demikian berita acara ini kami sampaikan, untuk dapat diproses lebih lanjut oleh unit terkait. Atas perhatian dan kerjasamanya disampaikan terima kasih.</p>
+        <div class="ba3-date"><span id="cetak3PlyKota">Babulu</span>, <span id="cetak3PlyTanggal"></span></div>
+        <div class="ba3-team">TIM SKO ATM</div>
+        <table class="ba3-signatures">
+            <tr>
+                <td><strong id="cetak3PlyAdmin"></strong><br><span>Staff Administrasi Capem</span></td>
+                <td><strong id="cetak3PlyTeller"></strong><br><span>Teller</span></td>
+            </tr>
+        </table>
+        <div class="ba3-manager-caption">PT. BANK PEMBANGUNAN DAERAH<br>KALIMANTAN TIMUR DAN KALIMANTAN UTARA<br><strong id="cetak3PlyCabangFooter">KANTOR CABANG PEMBANTU BABULU</strong><br>Mengetahui,</div>
+        <div class="ba3-manager"><strong id="cetak3PlyPimpinan"></strong><br><span>Pemimpin</span></div>
     </div>
 
     <!-- ========================================================================= -->
