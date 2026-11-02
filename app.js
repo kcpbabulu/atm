@@ -9,11 +9,26 @@ async function apiCall(action, dataPayload = null, customPeriod = null) {
     const period = customPeriod || getActivePeriod();
     const payload = { action, periode: period };
     if (dataPayload !== null) payload.data = dataPayload;
-    const retries = 3;
+
+    // Analisa membaca beberapa periode dan menulis ulang sheet selisih. Beri waktu lebih
+    // panjang dan JANGAN retry otomatis karena request pertama mungkin masih berjalan di server.
+    const timeoutByAction = {
+        analyze: 150000,
+        getDatabase: 90000,
+        getUniversal: 90000,
+        getLaporan: 90000,
+        getSelisih: 45000,
+        getOpname: 45000
+    };
+    const timeoutMs = timeoutByAction[action] || 45000;
+    const safeToRetry = ['getConfig', 'getDatabase', 'getUniversal', 'getLaporan', 'getSelisih', 'getOpname'].includes(action);
+    const maxAttempts = safeToRetry ? 2 : 1;
     let lastError;
-    for (let i = 0; i < retries; i++) {
+
+    for (let i = 0; i < maxAttempts; i++) {
         const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-        const timeoutId = controller ? setTimeout(() => controller.abort(), 30000) : null;
+        let timedOut = false;
+        const timeoutId = controller ? setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs) : null;
         try {
             const response = await fetch(API_URL, {
                 method: 'POST', body: JSON.stringify(payload),
@@ -26,12 +41,16 @@ async function apiCall(action, dataPayload = null, customPeriod = null) {
             return result;
         } catch (err) {
             lastError = err;
-            if (i === retries - 1) break;
+            if (i + 1 >= maxAttempts || err?.name === 'AbortError') break;
             await new Promise(resolve => setTimeout(resolve, 700 * (i + 1)));
         } finally { if (timeoutId) clearTimeout(timeoutId); }
     }
     console.error(`[API:${action}]`, lastError);
-    throw new Error(lastError?.name === 'AbortError' ? 'Permintaan terlalu lama. Periksa koneksi lalu coba kembali.' : (lastError?.message || 'Koneksi ke server gagal.'));
+    if (lastError?.name === 'AbortError') {
+        if (action === 'analyze') throw new Error('Analisa membutuhkan waktu lebih lama dari batas tunggu. Jangan klik Jalankan Analisa berulang kali. Periksa apakah proses sudah selesai, lalu coba lagi setelah beberapa saat.');
+        throw new Error('Permintaan melewati batas waktu. Periksa koneksi dan coba kembali.');
+    }
+    throw new Error(lastError?.message || 'Koneksi ke server gagal.');
 }
 
 // Penguatan UX global: cegah submit ganda dan berikan fallback error yang konsisten.
@@ -761,7 +780,15 @@ function bersihkanDataPalsu(selisihDataRaw) {
 // --------------------------------------------------
 
 async function triggerAnalysis() {
-    showProgressAlert('Analisa AI Berjalan...', 'Sedang mencocokkan data lintas bulan. Ini mungkin memakan waktu beberapa detik...');
+    if (window.__atm129AnalysisRunning) {
+        PlayfulAlert.fire('Analisa Sedang Berjalan', 'Tunggu proses analisa yang sedang berlangsung. Hindari menjalankan proses yang sama berulang kali.', 'info');
+        return;
+    }
+    window.__atm129AnalysisRunning = true;
+    const runButton = document.getElementById('btnRunAnalisa');
+    const oldButtonHtml = runButton ? runButton.innerHTML : '';
+    if (runButton) { runButton.disabled = true; runButton.setAttribute('aria-busy', 'true'); runButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Memproses analisa…'; }
+    showProgressAlert('Analisa AI Berjalan...', 'Analisa mencocokkan data GL dan EJ periode aktif serta bulan di sekitarnya. Data besar dapat memerlukan waktu lebih lama; jangan tutup halaman atau klik berulang kali.');
     startFakeProgress(92);
     
     try {
@@ -783,7 +810,11 @@ async function triggerAnalysis() {
         }, 500);
     } catch (err) { 
         Swal.close();
-        PlayfulAlert.fire('Error', err.toString(), 'error'); 
+        PlayfulAlert.fire('Analisa Belum Terverifikasi', err.message || String(err), 'error'); 
+    } finally {
+        stopFakeProgress();
+        window.__atm129AnalysisRunning = false;
+        if (runButton) { runButton.disabled = false; runButton.removeAttribute('aria-busy'); runButton.innerHTML = oldButtonHtml || '<i class="bi bi-lightning-charge-fill me-2"></i>Jalankan Analisa'; }
     }
 }
 
