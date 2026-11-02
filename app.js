@@ -1583,10 +1583,83 @@ function renderDataMaster() {
     const tbody = document.getElementById('tableBodyDataMaster');
     
     if (pageData.length === 0) tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted small"><i class="bi bi-emoji-frown d-block fs-4 mb-1"></i> Tidak ada data yang cocok.</td></tr>`;
-    else tbody.innerHTML = pageData.map(item => `<tr class="${item.isSelisih ? 'row-selisih' : 'row-aman'}"><td>${item.sumber === 'GL' ? `<span class="badge bg-primary px-3 rounded-pill shadow-sm"><i class="bi bi-file-earmark-text"></i> GL</span>` : `<span class="badge bg-success px-3 rounded-pill shadow-sm"><i class="bi bi-receipt"></i> EJ</span>`}</td><td class="fw-medium text-secondary" style="font-size:0.75rem">${item.tanggal}</td><td class="fw-bold">${item.atm}</td><td class="fw-bold">${item.isSelisih ? `<i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>` : ``}${item.resi}</td><td class="text-primary fw-bold">${formatRp(item.nominal)}</td><td class="text-muted small text-truncate" style="max-width:180px;" title="${item.ket}">${item.ket}</td></tr>`).join('');
+    else tbody.innerHTML = pageData.map(item => {
+        const pendingVerification = item.sumber === 'EJ' && /PERLU VERIFIKASI/i.test(String(item.ket || ''));
+        const encodedItem = encodeURIComponent(JSON.stringify({tanggal:item.tanggal, atm:item.atm, resi:item.resi, nominal:item.nominal, sumber:item.sumber, ket:item.ket}));
+        const action = pendingVerification
+          ? `<button class="btn btn-sm btn-warning rounded-pill fw-bold" onclick="event.stopPropagation(); openTransactionVerification('${encodedItem}')"><i class="bi bi-clipboard-check"></i> Verifikasi</button>`
+          : (item.sumber === 'EJ' && /TERVERIFIKASI/i.test(String(item.ket || '')) ? `<span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle"></i> Terverifikasi</span>` : `<span class="text-muted small">—</span>`);
+        return `<tr class="${item.isSelisih ? 'row-selisih' : 'row-aman'}"><td>${item.sumber === 'GL' ? `<span class="badge bg-primary px-3 rounded-pill shadow-sm"><i class="bi bi-file-earmark-text"></i> GL</span>` : `<span class="badge bg-success px-3 rounded-pill shadow-sm"><i class="bi bi-receipt"></i> EJ</span>`}</td><td class="fw-medium text-secondary" style="font-size:0.75rem">${item.tanggal}</td><td class="fw-bold">${item.atm}</td><td class="fw-bold">${item.isSelisih ? `<i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>` : ``}${item.resi}</td><td class="text-primary fw-bold">${formatRp(item.nominal)}</td><td class="text-muted small text-truncate" style="max-width:180px;" title="${String(item.ket).replace(/"/g,'&quot;')}">${item.ket}</td><td>${action}</td></tr>`;
+    }).join('');
     document.getElementById('paginationMaster').innerHTML = renderPagination(filteredData.length, pageState.master, PAGE_SIZE, 'master');
 }
 
+
+// Verifikasi manual untuk transaksi EJ yang hasil akhirnya belum diketahui.
+async function openTransactionVerification(encodedItem) {
+    let item;
+    try { item = JSON.parse(decodeURIComponent(encodedItem)); } catch (e) { return PlayfulAlert.fire('Data tidak valid', 'Detail transaksi tidak dapat dibaca.', 'error'); }
+    const keyMatch = row => String(row[1] || '').substring(0,10) === String(item.tanggal).substring(0,10) && String(row[2] || '').trim().toUpperCase() === String(item.atm || '').trim().toUpperCase() && String(row[3] || '').trim() === String(item.resi || '').trim();
+    const glRow = (databaseData.gl || []).find(keyMatch);
+    const ejRow = (databaseData.ej || []).find(keyMatch);
+    const nominalGL = Math.max(0, Number(glRow ? glRow[4] : 0) || 0);
+    const nominalEJ = Math.max(0, Number(ejRow ? ejRow[4] : item.nominal) || 0);
+    const nominalAwal = Math.abs(nominalGL - nominalEJ);
+    const result = await Swal.fire({
+        title: 'Verifikasi Transaksi EJ',
+        width: 680,
+        html: `<div class="text-start">
+          <div class="alert alert-warning small"><b>Tujuan:</b> pastikan apakah resi ini benar-benar menimbulkan selisih. Gangguan komunikasi saja bukan bukti pendebetan.</div>
+          <div class="row g-2 mb-3"><div class="col-6"><div class="border rounded-3 p-3 h-100"><div class="small text-muted">Tanggal</div><b>${item.tanggal}</b></div></div><div class="col-6"><div class="border rounded-3 p-3 h-100"><div class="small text-muted">ATM / Resi</div><b>${item.atm} / ${item.resi}</b></div></div>
+          <div class="col-6"><div class="border rounded-3 p-3"><div class="small text-muted">Nominal GL yang cocok</div><b class="text-primary">${formatRp(nominalGL)}</b></div></div><div class="col-6"><div class="border rounded-3 p-3"><div class="small text-muted">Nominal EJ</div><b class="text-success">${formatRp(nominalEJ)}</b></div></div></div>
+          <label class="form-label fw-bold" for="verifySelisihType">Jika selisih terkonfirmasi, jenisnya</label><select id="verifySelisihType" class="form-select mb-2"><option value="SELISIH KURANG">Selisih Kurang</option><option value="SELISIH LEBIH">Selisih Lebih</option></select>
+          <label class="form-label fw-bold" for="verifySelisihAmount">Nominal selisih (Rp)</label><input id="verifySelisihAmount" type="number" min="1" step="1" class="form-control mb-2" value="${nominalAwal || ''}" placeholder="Masukkan nominal selisih yang telah diverifikasi">
+          <label class="form-label fw-bold" for="verifySelisihNote">Catatan verifikasi</label><textarea id="verifySelisihNote" class="form-control" rows="2" placeholder="Contoh: telah dicocokkan dengan mutasi rekening/host dan jurnal GL"></textarea>
+          <div class="form-text mt-2">Pilih “Tidak Ada Selisih” hanya setelah bukti GL/host dan transaksi diperiksa. Jika ada selisih, kasus akan dimasukkan ke menu Analisa dengan status Belum.</div>
+        </div>`,
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: 'Tidak Ada Selisih',
+        denyButtonText: 'Ada Selisih — Selesaikan',
+        cancelButtonText: 'Nanti',
+        confirmButtonColor: '#198754', denyButtonColor: '#dc3545', cancelButtonColor: '#6c757d',
+        focusCancel: true,
+        preConfirm: () => ({keputusan:'TIDAK_ADA_SELISIH', alasan: document.getElementById('verifySelisihNote')?.value || ''}),
+        preDeny: () => {
+          const nominal = Number(document.getElementById('verifySelisihAmount')?.value || 0);
+          if (!(nominal > 0)) { Swal.showValidationMessage('Masukkan nominal selisih yang lebih besar dari nol.'); return false; }
+          return {keputusan:'ADA_SELISIH', jenisSelisih:document.getElementById('verifySelisihType')?.value, nominalSelisih:nominal, alasan:document.getElementById('verifySelisihNote')?.value || ''};
+        }
+    });
+    if (result.isDismissed) return;
+    const decision = result.isDenied ? result.value : result.value;
+    if (!decision) return;
+    try {
+      Swal.fire({title:'Menyimpan Verifikasi…', allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
+      const response = await apiCall('verifyTransaction', {
+        tanggal:item.tanggal, atm:item.atm, resi:item.resi,
+        nominalGL, nominalEJ, keputusan:decision.keputusan,
+        jenisSelisih:decision.jenisSelisih || '', nominalSelisih:decision.nominalSelisih || 0,
+        alasan:decision.alasan || ''
+      });
+      await refreshDatabaseAfterVerification();
+      Swal.fire({icon:'success', title:'Verifikasi Tersimpan', text:response.data?.message || 'Status verifikasi telah disimpan.'});
+      if (decision.keputusan === 'ADA_SELISIH') {
+        // Muat ulang daftar analisa agar item baru bisa langsung diselesaikan dan dibuatkan BA.
+        try { await fetchSelisihData(getActivePeriod()); } catch (e) { console.warn('Refresh daftar selisih:', e); }
+      }
+    } catch (err) {
+      Swal.fire({icon:'error', title:'Verifikasi Gagal', text:err.message || String(err)});
+    }
+}
+
+async function refreshDatabaseAfterVerification() {
+    const result = await apiCall('getDatabase');
+    if (result && result.success && result.data) {
+      databaseData = result.data;
+      renderDataMaster(); updateDataCompletenessBanner(); renderDashboard();
+    }
+}
 
 // ==========================================
 // INTERAKTIVITAS MENU OPNAME ATM
