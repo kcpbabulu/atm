@@ -657,3 +657,20 @@ html[data-bs-theme="dark"] .ux-period-chip { background:#172b49;color:#bfdbfe;bo
 @media(prefers-reduced-motion:reduce) { .ux-action-card,.ux-toast { animation:none!important;transition:none!important; } }
 
 .ux-search-highlight { outline:2px solid #60a5fa!important; outline-offset:3px!important; border-radius:6px; }
+
+/* Global period controller: one period for every module, optimized for touch */
+.period-control-cluster{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.period-step-btn{width:30px;height:36px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.24);border-radius:10px;background:rgba(255,255,255,.10);color:#fff;cursor:pointer;transition:background .15s ease,transform .15s ease}
+.period-step-btn:hover,.period-step-btn:focus-visible{background:rgba(255,255,255,.22);color:#fff}
+.period-step-btn:active{transform:scale(.96)}
+.period-today-btn{min-height:34px;padding:0 9px;display:inline-flex;align-items:center;justify-content:center;gap:5px;border:1px solid rgba(255,255,255,.25);border-radius:10px;background:rgba(255,255,255,.10);color:#fff;font-size:.72rem;font-weight:800;white-space:nowrap;cursor:pointer}
+.period-today-btn:hover,.period-today-btn:focus-visible{background:rgba(255,255,255,.22);color:#fff}
+.period-workload-badge{max-width:190px;min-height:34px;padding:6px 10px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(255,255,255,.10);color:#fff;font-size:.68rem;font-weight:800;line-height:1.15;cursor:pointer;white-space:normal;text-align:center}
+.period-workload-badge i{font-size:.85rem;flex-shrink:0}
+.period-workload-badge.is-pending{background:#fff3cd;border-color:#ffdf7e;color:#744b00}
+.period-workload-badge.is-clear{background:rgba(16,185,129,.18);border-color:rgba(110,231,183,.5);color:#e6fff5}
+.period-workload-badge:focus-visible{outline:2px solid #ffd166!important;outline-offset:2px}
+@media(max-width:1199.98px){.period-workload-badge{max-width:155px;font-size:.62rem}.period-today-label{display:none}.period-today-btn{width:32px;padding:0}}
+@media(max-width:767.98px){.header-controls{gap:4px!important}.period-control-cluster{gap:3px}.period-step-btn{width:25px;height:35px;border-radius:8px}.period-today-btn{width:28px;min-height:32px;height:32px;padding:0;border-radius:8px}.period-workload-badge{max-width:88px;min-height:32px;padding:4px 6px;font-size:.57rem;gap:4px}.period-workload-badge i{display:none}.month-picker-container{max-width:155px}}
+@media(max-width:575.98px){.period-workload-badge{display:none}.period-step-btn{width:23px}.month-picker-container{width:158px!important}.period-control-cluster{gap:2px}}
+@media(prefers-reduced-motion:reduce){.period-step-btn,.period-today-btn{transition:none}}
