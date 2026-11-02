@@ -82,15 +82,27 @@ let globalHistMap = new Map(), currentDetailData = [], detailType = '';
 let pageState = { analisaKurang: 1, analisaLebih: 1, analisaSelesai: 1, master: 1, opname: 1, uploadHist: 1, histDetail: 1, arsipPage: 1 };
 const PAGE_SIZE = 10;
 
+const ATM129_PERIOD_STORAGE_KEY = 'atm129_active_period_v1';
 function getActivePeriod() {
-    let val = document.getElementById('globalPeriod').value;
-    if(!val) {
-        let d = new Date();
-        val = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
-        document.getElementById('globalPeriod').value = val;
+    const input = document.getElementById('globalPeriod');
+    let val = input ? input.value : '';
+    if (!val) {
+        try { val = localStorage.getItem(ATM129_PERIOD_STORAGE_KEY) || ''; } catch (_) {}
     }
-    let parts = val.split('-');
-    return parts[1] + parts[0]; 
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(val)) {
+        const d = new Date();
+        val = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+    if (input && input.value !== val) input.value = val;
+    try { localStorage.setItem(ATM129_PERIOD_STORAGE_KEY, val); } catch (_) {}
+    const parts = val.split('-');
+    return parts[1] + parts[0];
+}
+function persistActivePeriod() {
+    const input = document.getElementById('globalPeriod');
+    if (!input || !/^\d{4}-(0[1-9]|1[0-2])$/.test(input.value)) return;
+    try { localStorage.setItem(ATM129_PERIOD_STORAGE_KEY, input.value); } catch (_) {}
+    updatePeriodWorkloadStatus();
 }
 
 window.superApp = window.superApp || {};
@@ -140,7 +152,7 @@ async function refreshAllPeriodData({showDialog = false} = {}) {
 
         // Render ulang semua komponen terkait periode setelah state data konsisten.
         renderDataMaster(); renderSelisihTablesFiltered(); renderOpnameTable();
-        renderCalendar(); renderDashboard(); updateDataCompletenessBanner();
+        renderCalendar(); renderDashboard(); updateDataCompletenessBanner(); updatePeriodWorkloadStatus();
         setPeriodLoading(false);
         if (showDialog) PlayfulAlert.close();
     } catch (e) {
@@ -155,9 +167,48 @@ async function refreshAllPeriodData({showDialog = false} = {}) {
 }
 
 superApp.changePeriod = async function() {
+    persistActivePeriod();
     try { await refreshAllPeriodData({showDialog: true}); }
     catch (e) { /* Pesan sudah ditampilkan di status dan dialog. */ }
 };
+superApp.shiftPeriod = function(direction) {
+    const input = document.getElementById('globalPeriod');
+    if (!input) return;
+    const current = input.value || (() => { getActivePeriod(); return input.value; })();
+    const parts = current.split('-').map(Number);
+    const next = new Date(parts[0], parts[1] - 1 + Number(direction || 0), 1);
+    input.value = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+};
+superApp.goToCurrentPeriod = function() {
+    const input = document.getElementById('globalPeriod');
+    if (!input) return;
+    const now = new Date();
+    const value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    if (input.value === value) { refreshAllPeriodData({showDialog: false}).catch(() => {}); return; }
+    input.value = value;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+};
+superApp.openPendingWork = function() {
+    const verify = (databaseData.ej || []).some(row => String(row[5] || '').toUpperCase().includes('PERLU VERIFIKASI'));
+    const pending = (globalSelisihData || []).some(row => String(row[5] || '').toLowerCase() === 'belum');
+    if (verify) showPage('pusatdata');
+    else if (pending) showPage('analisa');
+    else showPage('dashboard');
+};
+
+function updatePeriodWorkloadStatus() {
+    const badge = document.getElementById('periodWorkloadBadge');
+    const text = document.getElementById('periodWorkloadText');
+    if (!badge || !text) return;
+    const verifyCount = (databaseData.ej || []).filter(row => String(row[5] || '').toUpperCase().includes('PERLU VERIFIKASI')).length;
+    const pendingCount = (globalSelisihData || []).filter(row => String(row[5] || '').toLowerCase() === 'belum').length;
+    const total = verifyCount + pendingCount;
+    badge.classList.toggle('is-pending', total > 0);
+    badge.classList.toggle('is-clear', total === 0);
+    badge.setAttribute('aria-label', `${verifyCount} perlu verifikasi, ${pendingCount} selisih belum selesai`);
+    text.textContent = total > 0 ? `${verifyCount} verifikasi · ${pendingCount} selisih` : 'Tidak ada kasus tertunda';
+}
 
 function changePage(section, newPage) {
     pageState[section] = newPage;
@@ -2452,6 +2503,7 @@ function renderDashboard() {
     
     document.getElementById('dashAiText').innerHTML = aiText;
     updateNavigationBadges();
+    updatePeriodWorkloadStatus();
 }
 
 // ==========================================
