@@ -547,7 +547,11 @@ async function processEJ() {
                         else if (currentTx.jenis === "PEMBAYARAN") currentTx.status = "SUKSES (PEMBELIAN/PAYMENT)";
                         else currentTx.status = "SUKSES";
                     } else {
-                        currentTx.status = "NON-FINANSIAL";
+                        // Jangan menyimpulkan NON-FINANSIAL hanya karena nominal tidak ditemukan.
+                        // Log dapat terpotong atau sesi dapat berulang setelah gangguan komunikasi.
+                        currentTx.status = currentTx.jenis === "NON-FINANSIAL"
+                            ? "NON-FINANSIAL"
+                            : "PERLU VERIFIKASI - JENIS/NOMINAL TIDAK TERKONFIRMASI";
                     }
                 }
                 if (!currentTx.nominal) currentTx.nominal = 0;
@@ -623,7 +627,12 @@ async function processEJ() {
                 currentTx.status = (currentTx.jenis === "TRANSFER") ? "SUKSES (TRANSFER)" : (currentTx.jenis === "PEMBAYARAN") ? "SUKSES (PEMBELIAN/PAYMENT)" : "SUKSES";
             }
             
-            const errorKeywords = ["SALDO KURANG", "SALAH MASUKKAN PIN", "KARTU ANDA SUDAH KADALUARSA", "HIGH BILL MIX ERROR", "ANDA MELEBIHI BATAS LIMIT", "DO NOT HONOR","LOW BILL MIX ERROR", "DISPENSER ERROR", "COMMUNICATION ERROR", "COMMUNICATION OFFLINE", "CDM ERROR", "KD.ARE/NO.TELP TDK TERDAFTA", "RESTRICTED PHONE NUMBER", "MELEBIHI LIMIT", "INACTIVE ACCOUNT", "UNABLE TO PROCESS", "TIDAK DAPAT DIPROSES", "INVALID ZERO AMOUNT", "INVALID INSTITUTION", "RESPONSE CODE GAGAL", "CHIP CARD SECURITY FAILURE", "PROCESSOR TEMP DOWN", "KARTU ANDA TERDAFTAR SBG", "TRANSAKSI SEDANG DIPROSES", "NO ARPC", "SUSPECT"];
+            const communicationIssues = ["COMMUNICATION ERROR", "COMMUNICATION OFFLINE"];
+            if (communicationIssues.some(err => textUpper.includes(err)) && !currentTx.cashTaken) {
+                // Gangguan komunikasi tidak membuktikan transaksi gagal debit; perlu rekonsiliasi host/GL.
+                currentTx.status = "PERLU VERIFIKASI - GANGGUAN KOMUNIKASI";
+            }
+            const errorKeywords = ["SALDO KURANG", "SALAH MASUKKAN PIN", "KARTU ANDA SUDAH KADALUARSA", "HIGH BILL MIX ERROR", "ANDA MELEBIHI BATAS LIMIT", "DO NOT HONOR","LOW BILL MIX ERROR", "DISPENSER ERROR", "CDM ERROR", "KD.ARE/NO.TELP TDK TERDAFTA", "RESTRICTED PHONE NUMBER", "MELEBIHI LIMIT", "INACTIVE ACCOUNT", "UNABLE TO PROCESS", "TIDAK DAPAT DIPROSES", "INVALID ZERO AMOUNT", "INVALID INSTITUTION", "RESPONSE CODE GAGAL", "CHIP CARD SECURITY FAILURE", "PROCESSOR TEMP DOWN", "KARTU ANDA TERDAFTAR SBG", "TRANSAKSI SEDANG DIPROSES", "NO ARPC", "SUSPECT"];
             errorKeywords.forEach(err => { if (textUpper.includes(err) && !currentTx.cashTaken) currentTx.status = "GAGAL - " + err; });
             if (line.match(/TRANSACTION \d+ FAILED/i) && !currentTx.cashTaken) currentTx.status = "GAGAL - TRANSACTION FAILED";
         }
@@ -637,6 +646,33 @@ async function processEJ() {
         updateProgress((processedFiles / files.length) * 100);
     }
     
+    // Deduplikasi sesi yang mengeluarkan nomor resi sama (contoh SMART EMV 5669 muncul ulang).
+    // Pertahankan status dengan bukti terkuat; jangan biarkan sesi kosong belakangan menimpa gangguan komunikasi.
+    const ejStatusRank = status => {
+        const v = String(status || '').toUpperCase();
+        if (v.includes('CASH TAKEN') || v.includes('SUKSES')) return 5;
+        if (v.includes('PERLU VERIFIKASI') || v.includes('COMMUNICATION')) return 4;
+        if (v.includes('GAGAL')) return 3;
+        if (v.includes('NON-FINANSIAL')) return 2;
+        return 1;
+    };
+    const deduped = new Map();
+    ejData.forEach(row => {
+        const key = [String(row[0] || '').slice(0,10), String(row[1] || '').trim(), String(row[2] || '').trim()].join('|');
+        if (!deduped.has(key)) { deduped.set(key, row); return; }
+        const old = deduped.get(key);
+        const oldRank = ejStatusRank(old[4]), newRank = ejStatusRank(row[4]);
+        const chosen = newRank > oldRank ? row.slice() : old.slice();
+        chosen[3] = Math.max(Number(old[3]) || 0, Number(row[3]) || 0);
+        // Kalau sesi mana pun menunjukkan gangguan komunikasi, jangan klasifikasikan sebagai non-finansial.
+        const statuses = [String(old[4] || ''), String(row[4] || '')];
+        if (statuses.some(v => /COMMUNICATION ERROR|COMMUNICATION OFFLINE|GANGGUAN KOMUNIKASI/i.test(v)) && !statuses.some(v => /SUKSES/i.test(v))) {
+            chosen[4] = 'PERLU VERIFIKASI - GANGGUAN KOMUNIKASI';
+        }
+        deduped.set(key, chosen);
+    });
+    ejData = Array.from(deduped.values());
+
     setTimeout(() => {
         Swal.close();
         if (ejData.length === 0) return PlayfulAlert.fire('Data Kosong', 'Tidak ditemukan transaksi pada file EJ ini.', 'warning');
@@ -652,7 +688,7 @@ function showPreviewModal(data, type) {
     thead.innerHTML = type === 'GL' ? `<tr><th>Tanggal</th><th>ATM</th><th>Resi</th><th>Nominal</th><th>Jenis</th><th>Referensi</th></tr>` : `<tr><th>Tanggal</th><th>ATM</th><th>Resi</th><th>Nominal</th><th>Status Transaksi</th></tr>`;
     const rowsHtml = data.slice(0, 100).map(row => {
         if (type === 'GL') return `<tr><td class="text-secondary fw-medium">${row[0]}</td><td><span class="badge bg-secondary rounded-pill">${row[1]}</span></td><td class="fw-bold">${row[2]}</td><td class="text-primary fw-bold">${formatRp(row[3])}</td><td><span class="badge bg-info text-dark rounded-pill">${row[4]}</span></td><td class="text-muted"><small>${row[5]}</small></td></tr>`;
-        let badge = row[4].includes('SUKSES') ? `bg-success-subtle text-success` : row[4].includes('GAGAL') ? `bg-danger-subtle text-danger` : `bg-light text-secondary`;
+        let badge = row[4].includes('SUKSES') ? `bg-success-subtle text-success` : row[4].includes('GAGAL') ? `bg-danger-subtle text-danger` : row[4].includes('PERLU VERIFIKASI') ? `bg-warning-subtle text-dark` : `bg-light text-secondary`;
         return `<tr><td class="text-secondary fw-medium">${row[0]}</td><td><span class="badge bg-secondary rounded-pill">${row[1]}</span></td><td class="fw-bold">${row[2]}</td><td class="text-primary fw-bold">${formatRp(row[3])}</td><td><span class="badge rounded-pill px-3 py-1 ${badge}">${row[4]}</span></td></tr>`;
     }).join('');
     let extraMsg = data.length > 100 ? `<tr><td colspan="6" class="text-center text-muted fst-italic py-3 bg-light">Menampilkan 100 baris pertama dari ${data.length.toLocaleString('id-ID')} baris...</td></tr>` : '';
