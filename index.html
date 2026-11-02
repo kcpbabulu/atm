@@ -36,15 +36,23 @@
             <!-- Area Kontrol (Dioptimalkan untuk HP) -->
             <div class="d-flex gap-2 align-items-center header-controls">
                 
-                <!-- MESIN WAKTU (PEMILIH BULAN) -->
-                <div class="month-picker-container" role="group" aria-label="Periode rekonsiliasi">
-                    <span class="month-picker-icon"><i class="bi bi-calendar2-check-fill"></i></span>
-                    <div class="month-picker-copy">
-                        <span class="month-picker-caption">PERIODE AKTIF</span>
-                        <input type="month" id="globalPeriod" class="form-control form-control-sm month-picker-input" onchange="superApp.changePeriod()" title="Pilih bulan rekonsiliasi untuk seluruh halaman" aria-label="Pilih bulan rekonsiliasi">
+                <!-- PERIODE GLOBAL: satu pilihan untuk seluruh menu -->
+                <div class="period-control-cluster" role="group" aria-label="Kontrol periode global">
+                    <button type="button" class="period-step-btn" onclick="superApp.shiftPeriod(-1)" title="Periode sebelumnya" aria-label="Periode sebelumnya"><i class="bi bi-chevron-left"></i></button>
+                    <div class="month-picker-container" role="group" aria-label="Periode rekonsiliasi">
+                        <span class="month-picker-icon"><i class="bi bi-calendar2-check-fill"></i></span>
+                        <div class="month-picker-copy">
+                            <span class="month-picker-caption">PERIODE AKTIF</span>
+                            <input type="month" id="globalPeriod" class="form-control form-control-sm month-picker-input" onchange="superApp.changePeriod()" title="Pilih bulan rekonsiliasi untuk seluruh halaman" aria-label="Pilih bulan rekonsiliasi">
+                        </div>
+                        <span class="month-picker-chevron"><i class="bi bi-chevron-down"></i></span>
                     </div>
-                    <span class="month-picker-chevron"><i class="bi bi-chevron-down"></i></span>
+                    <button type="button" class="period-step-btn" onclick="superApp.shiftPeriod(1)" title="Periode berikutnya" aria-label="Periode berikutnya"><i class="bi bi-chevron-right"></i></button>
+                    <button type="button" class="period-today-btn" onclick="superApp.goToCurrentPeriod()" title="Kembali ke bulan ini"><i class="bi bi-arrow-counterclockwise"></i><span class="period-today-label">Bulan ini</span></button>
                 </div>
+                <button type="button" id="periodWorkloadBadge" class="period-workload-badge" onclick="superApp.openPendingWork()" title="Lihat kasus yang masih perlu ditindaklanjuti" aria-live="polite">
+                    <i class="bi bi-check2-circle"></i><span id="periodWorkloadText">Memuat status...</span>
+                </button>
                 
                 <!-- Pencarian cepat UI (tidak menggantikan hak akses server) -->
                 <div class="global-search-wrap d-none d-lg-flex" role="search">
