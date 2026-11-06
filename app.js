@@ -2504,6 +2504,37 @@ function renderDashboard() {
     document.getElementById('dashAiText').innerHTML = aiText;
     updateNavigationBadges();
     updatePeriodWorkloadStatus();
+    renderATMCommandCenter();
+}
+
+// Command Center: seluruh metrik dihitung dari state yang sudah dimuat aplikasi.
+// Tidak menyimpulkan status online/offline perangkat ATM dari keberadaan data EJ.
+function renderATMCommandCenter() {
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = String(value); };
+    const gl = Array.isArray(databaseData.gl) ? databaseData.gl : [];
+    const ej = Array.isArray(databaseData.ej) ? databaseData.ej : [];
+    const cases = Array.isArray(globalSelisihData) ? globalSelisihData : [];
+    const open = cases.filter(r => String(r[5] || '').toLowerCase() === 'belum');
+    const closed = cases.length - open.length;
+    const verify = ej.filter(r => String(r[5] || '').toUpperCase().includes('PERLU VERIFIKASI'));
+    const total = gl.length + ej.length;
+    const rate = cases.length ? Math.round((closed / cases.length) * 100) : 100;
+    set('ccTotalTrx', formatNum(total)); set('ccSourceBreakdown', `GL ${formatNum(gl.length)} · EJ ${formatNum(ej.length)}`);
+    set('ccOpenCases', formatNum(open.length)); set('ccClosedCases', formatNum(closed));
+    set('ccResolutionRate', `Tingkat resolusi ${rate}%`); set('ccVerifyCount', formatNum(verify.length));
+    set('ccFlowVerify', formatNum(verify.length)); set('ccFlowOpen', formatNum(open.length)); set('ccFlowClosed', formatNum(closed));
+    const periodLabel = document.getElementById('ccPeriodLabel');
+    if (periodLabel) { const p = getActivePeriod(); const mm = parseInt(p.substring(0,2),10)-1; const yy=p.substring(2,6); const months=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']; periodLabel.textContent = `${months[mm] || ''} ${yy}`; }
+    const conn = document.getElementById('ccConnectionLabel'); if (conn) conn.textContent = navigator.onLine ? 'Jaringan tersedia' : 'Perangkat offline';
+    const ranking = document.getElementById('ccAtmRanking');
+    if (ranking) {
+        const counts = new Map();
+        open.forEach(r => { const atm = String(r[1] || 'ID ATM tidak tersedia').trim() || 'ID ATM tidak tersedia'; counts.set(atm, (counts.get(atm)||0)+1); });
+        const rows = Array.from(counts.entries()).sort((a,b)=>b[1]-a[1]).slice(0,5);
+        ranking.replaceChildren();
+        if (!rows.length) { const empty=document.createElement('div'); empty.className='atm-empty-state'; empty.textContent=cases.length ? 'Tidak ada kasus selisih terbuka pada periode ini.' : 'Belum ada data kasus untuk ditampilkan.'; ranking.appendChild(empty); }
+        else rows.forEach(([atm,count],i)=>{ const row=document.createElement('div'); row.className='atm-ranking-row'; const label=document.createElement('span'); label.className='atm-rank-number'; label.textContent=String(i+1).padStart(2,'0'); const name=document.createElement('b'); name.textContent=atm; const meter=document.createElement('span'); meter.className='atm-rank-meter'; const fill=document.createElement('i'); fill.style.width=`${Math.max(8, count/rows[0][1]*100)}%`; meter.appendChild(fill); const value=document.createElement('strong'); value.textContent=`${count} kasus`; row.append(label,name,meter,value); ranking.appendChild(row); });
+    }
 }
 
 // ==========================================
