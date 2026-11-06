@@ -18,7 +18,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     
     <!-- Custom Stylesheet (Semua CSS ada di sini) -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=dc5-20261106">
 </head>
 <body>
     <!-- HEADER PREMIUM BANKING -->
@@ -135,6 +135,36 @@
                             <p class="text-muted small fw-medium mb-0 mt-1" id="dashBulan">Periode Aktif: ...</p>
                         </div>
                     </div>
+
+                    <!-- COMMAND CENTER: ringkasan operasional berbasis data aplikasi -->
+                    <section id="atmCommandCenter" class="atm-command-center mb-4" aria-label="ATM operations command center">
+                        <div class="atm-command-hero">
+                            <div class="atm-command-copy">
+                                <div class="atm-live-kicker"><span class="atm-live-pulse"></span> OPERATIONS & RECONCILIATION CENTER</div>
+                                <h2>Command Center</h2>
+                                <p>Pantau kesehatan rekonsiliasi, kasus tertunda, dan aktivitas data ATM dalam satu tampilan.</p>
+                                <div class="atm-command-meta"><span><i class="bi bi-calendar3"></i> <b id="ccPeriodLabel">Periode aktif</b></span><span><i class="bi bi-wifi"></i> <b id="ccConnectionLabel">Memeriksa koneksi</b></span></div>
+                            </div>
+                            <div class="atm-hero-orbit" aria-hidden="true"><div class="orbit-ring orbit-one"></div><div class="orbit-ring orbit-two"></div><div class="orbit-core"><i class="bi bi-cpu-fill"></i><small>ATM 129</small></div></div>
+                        </div>
+                        <div class="atm-kpi-grid" aria-label="Indikator utama">
+                            <button class="atm-kpi-card kpi-blue" type="button" onclick="showPage('pusatdata');document.getElementById('tab-data-master')?.click()"><span class="kpi-label">TRANSAKSI GL + EJ</span><strong id="ccTotalTrx">0</strong><small id="ccSourceBreakdown">GL 0 · EJ 0</small><i class="bi bi-database-fill kpi-watermark"></i></button>
+                            <button class="atm-kpi-card kpi-amber" type="button" onclick="showPage('analisa')"><span class="kpi-label">KASUS TERBUKA</span><strong id="ccOpenCases">0</strong><small>Menunggu penyelesaian</small><i class="bi bi-hourglass-split kpi-watermark"></i></button>
+                            <button class="atm-kpi-card kpi-green" type="button" onclick="showPage('analisa')"><span class="kpi-label">KASUS SELESAI</span><strong id="ccClosedCases">0</strong><small id="ccResolutionRate">Tingkat resolusi 0%</small><i class="bi bi-check2-circle kpi-watermark"></i></button>
+                            <button class="atm-kpi-card kpi-red" type="button" onclick="showPage('pusatdata')"><span class="kpi-label">EJ PERLU VERIFIKASI</span><strong id="ccVerifyCount">0</strong><small>Perlu pemeriksaan petugas</small><i class="bi bi-shield-exclamation kpi-watermark"></i></button>
+                        </div>
+                        <div class="atm-intel-grid">
+                            <article class="atm-intel-panel">
+                                <div class="atm-panel-heading"><div><span class="atm-panel-eyebrow">FLEET INTELLIGENCE</span><h6>ATM dengan kasus terbanyak</h6></div><button type="button" class="atm-panel-link" onclick="showPage('analisa')">Lihat kasus <i class="bi bi-arrow-up-right"></i></button></div>
+                                <div id="ccAtmRanking" class="atm-ranking-list"><div class="atm-empty-state">Data kasus akan tampil setelah periode dimuat.</div></div>
+                            </article>
+                            <article class="atm-intel-panel">
+                                <div class="atm-panel-heading"><div><span class="atm-panel-eyebrow">CASE MANAGEMENT</span><h6>Alur tindak lanjut</h6></div><span class="atm-panel-tag">LIVE DATA</span></div>
+                                <div class="atm-case-flow"><div><span class="flow-node node-amber"><i class="bi bi-search"></i></span><span><b id="ccFlowVerify">0</b><small>Perlu verifikasi EJ</small></span></div><i class="bi bi-arrow-right"></i><div><span class="flow-node node-red"><i class="bi bi-exclamation-diamond"></i></span><span><b id="ccFlowOpen">0</b><small>Selisih belum selesai</small></span></div><i class="bi bi-arrow-right"></i><div><span class="flow-node node-green"><i class="bi bi-check2"></i></span><span><b id="ccFlowClosed">0</b><small>Kasus selesai</small></span></div></div>
+                                <div class="atm-panel-footnote"><i class="bi bi-info-circle"></i> Angka mengikuti data yang berhasil dimuat untuk periode aktif. Status koneksi ATM fisik tidak diasumsikan dari data EJ.</div>
+                            </article>
+                        </div>
+                    </section>
 
                     <section class="ux-action-strip mb-4" aria-label="Akses cepat">
                         <div class="ux-action-heading"><div><span class="ux-eyebrow">AKSES CEPAT</span><h5 class="mb-0 fw-bold">Apa yang ingin Anda kerjakan?</h5></div><span class="ux-period-chip"><i class="bi bi-calendar3 me-1"></i><span id="uxPeriodEcho">Periode aktif</span></span></div>
@@ -1711,6 +1741,6 @@
         </div>
     </div>
     
-    <script src="app.js"></script>
+    <script src="app.js?v=dc5-20261106"></script>
 </body>
 </html>
