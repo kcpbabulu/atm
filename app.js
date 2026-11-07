@@ -55,7 +55,7 @@ async function apiCall(action, dataPayload = null, customPeriod = null) {
 
 // ALL-TIME DATA CENTER: dashboard agregat dan pencarian server-side berpaginasi.
 window.atm129AllTime = (() => {
-    let page=1, lastQuery='', lastType='GL', totalPages=0, searchTimer=null;
+    let page=1, lastQuery='', lastType='GL', totalPages=0, searchTimer=null, requestSeq=0;
     const fmt=n=>new Intl.NumberFormat('id-ID').format(Number(n)||0);
     const safe=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     async function refresh(){
@@ -71,21 +71,41 @@ window.atm129AllTime = (() => {
         }catch(e){host.classList.remove('is-loading');const meta=document.getElementById('atMeta');if(meta)meta.textContent='Ringkasan gagal dimuat: '+(e.message||'periksa koneksi');console.error('All-time summary:',e);}
     }
     async function search(direction=1, next=false){
-        const q=document.getElementById('atQuery')?.value||'';const type=document.getElementById('atType')?.value||'GL';
-        if(next)page=Math.min(totalPages,page+1);else if(direction<0)page=Math.max(1,page-1);else page=1;
-        lastQuery=q;lastType=type;
-        const host=document.getElementById('atResults');if(!host)return;host.innerHTML='<span class="text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Mencari seluruh histori…</span>';
+        const q=(document.getElementById('atQuery')?.value||'').trim();
+        const type=document.getElementById('atType')?.value||'GL';
+        if(next) page=Math.min(totalPages||1,page+1); else if(direction<0) page=Math.max(1,page-1); else page=1;
+        lastQuery=q; lastType=type;
+        const host=document.getElementById('atResults'); if(!host)return;
+        const seq=++requestSeq;
+        if(q.length<2){
+            host.textContent='Ketik minimal 2 karakter untuk mencari transaksi.';
+            const info=document.getElementById('atPageInfo'); if(info)info.textContent='Belum ada hasil';
+            const prev=document.getElementById('atPrev'),nxt=document.getElementById('atNext');if(prev)prev.disabled=true;if(nxt)nxt.disabled=true;
+            return;
+        }
+        host.setAttribute('aria-busy','true');
+        host.innerHTML='<span class="text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Mencari seluruh histori…</span>';
         try{
-            const r=await apiCall('getPagedData',{type,page,pageSize:25,query:q},'000000');const d=r.data||{};totalPages=d.totalPages||0;
-            host.innerHTML=(d.rows||[]).length?`<div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead><tr><th>Periode</th><th>Tanggal</th><th>ATM</th><th>Resi</th><th>Nominal</th><th>Detail</th></tr></thead><tbody>${d.rows.map(x=>{const a=x.row||[];const ix=type==='SELISIH'?{atm:1,resi:2,nom:3,detail:4}: {atm:2,resi:3,nom:4,detail:5};return `<tr><td>${safe(x.period)}</td><td>${safe(x.date)}</td><td>${safe(a[ix.atm])}</td><td>${safe(a[ix.resi])}</td><td>${safe(fmt(a[ix.nom]))}</td><td>${safe(a[ix.detail])}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="text-muted small py-3">Tidak ada data yang cocok.</div>';
-            document.getElementById('atPageInfo').textContent=`${fmt(d.total)} data · halaman ${d.total?d.page:0} dari ${fmt(d.totalPages)}`;
-            document.getElementById('atPrev').disabled=page<=1;document.getElementById('atNext').disabled=!d.hasMore;
-        }catch(e){host.textContent='Pencarian gagal: '+(e.message||'periksa koneksi');}
+            const r=await apiCall('getPagedData',{type,page,pageSize:25,query:q},'000000');
+            if(seq!==requestSeq)return;
+            const d=r.data||{}; totalPages=d.totalPages||0;
+            host.innerHTML=(d.rows||[]).length?`<div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead><tr><th>Periode</th><th>Tanggal</th><th>ATM</th><th>Resi</th><th>Nominal</th><th>Detail</th></tr></thead><tbody>${d.rows.map(x=>{const row=x.row||[];const ix=type==='SELISIH'?{atm:1,resi:2,nom:3,detail:4}:{atm:2,resi:3,nom:4,detail:5};return `<tr><td>${safe(x.period)}</td><td>${safe(x.date)}</td><td>${safe(row[ix.atm])}</td><td>${safe(row[ix.resi])}</td><td>${safe(fmt(row[ix.nom]))}</td><td>${safe(row[ix.detail])}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="text-muted small py-3">Tidak ada data yang cocok.</div>';
+            const info=document.getElementById('atPageInfo');if(info)info.textContent=`${fmt(d.total)} data · halaman ${d.total?d.page:0} dari ${fmt(d.totalPages)}`;
+            const prev=document.getElementById('atPrev'),nxt=document.getElementById('atNext');if(prev)prev.disabled=page<=1;if(nxt)nxt.disabled=!d.hasMore;
+        }catch(e){if(seq===requestSeq)host.textContent='Pencarian gagal: '+(e.message||'periksa koneksi');}
+        finally{if(seq===requestSeq)host.removeAttribute('aria-busy');}
     }
-    function init(){refresh();const q=document.getElementById('atQuery');q?.addEventListener('keydown',e=>{if(e.key==='Enter')search(1);});q?.addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{if(q.value.trim().length>=2||q.value.trim()==='')search(1);},450);});document.getElementById('atType')?.addEventListener('change',()=>search(1));}
+    function init(){refresh();const q=document.getElementById('atQuery');q?.addEventListener('keydown',e=>{if(e.key==='Enter')search(1);});q?.addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{if(q.value.trim().length>=2)search(1);else{requestSeq++;const host=document.getElementById('atResults');if(host)host.textContent='Ketik minimal 2 karakter untuk mencari transaksi.';const info=document.getElementById('atPageInfo');if(info)info.textContent='Belum ada hasil';const p=document.getElementById('atPrev'),n=document.getElementById('atNext');if(p)p.disabled=true;if(n)n.disabled=true;}},350);});document.getElementById('atType')?.addEventListener('change',()=>search(1));}
     return {refresh,search,init};
 })();
 document.addEventListener('DOMContentLoaded',()=>window.atm129AllTime?.init(),{once:true});
+document.addEventListener('DOMContentLoaded',()=>{
+    document.querySelectorAll('[data-dashboard-target]').forEach(card=>{
+        const go=()=>showPage(card.dataset.dashboardTarget);
+        card.addEventListener('click',go);
+        card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});
+    });
+},{once:true});
 
 // Penguatan UX global: cegah submit ganda dan berikan fallback error yang konsisten.
 window.__atm129Busy = window.__atm129Busy || new Set();
