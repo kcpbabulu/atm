@@ -53,6 +53,40 @@ async function apiCall(action, dataPayload = null, customPeriod = null) {
     throw new Error(lastError?.message || 'Koneksi ke server gagal.');
 }
 
+// ALL-TIME DATA CENTER: dashboard agregat dan pencarian server-side berpaginasi.
+window.atm129AllTime = (() => {
+    let page=1, lastQuery='', lastType='GL', totalPages=0, searchTimer=null;
+    const fmt=n=>new Intl.NumberFormat('id-ID').format(Number(n)||0);
+    const safe=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    async function refresh(){
+        const host=document.getElementById('allTimeCenter'); if(!host)return;
+        host.classList.add('is-loading');
+        try{
+            const result=await apiCall('getAllTimeSummary',null,'000000'); const d=result.data||{};
+            ['GL','EJ','Cases','Open','Closed','Verify'].forEach((k,i)=>{const ids=['atGL','atEJ','atCases','atOpen','atClosed','atVerify'];const vals=[d.gl,d.ej,d.selisih,d.openCases,d.closedCases,d.verify];const el=document.getElementById(ids[i]);if(el)el.textContent=fmt(vals[i]);});
+            const meta=document.getElementById('atMeta'); if(meta)meta.textContent=`${fmt(d.sourceSheets)} sheet data · resolusi ${Number(d.resolutionRate||0).toLocaleString('id-ID')}%`;
+            const months=document.getElementById('atMonths'); if(months){const recent=(d.months||[]).slice(-12).reverse();months.innerHTML=recent.length?recent.map(m=>`<div class="at-month-row"><span>${safe(m.period.slice(0,2)+'/'+m.period.slice(2))}</span><span class="at-month-bar"><i style="width:${Math.max(2,Math.min(100,(m.gl+m.ej)/Math.max(1,...recent.map(x=>x.gl+x.ej))*100))}%"></i></span><b>${fmt(m.gl+m.ej)}</b><small>GL ${fmt(m.gl)} · EJ ${fmt(m.ej)}</small></div>`).join(''):'<span class="text-muted small">Belum ada histori.</span>';}
+            const ranking=document.getElementById('atAtmRanking');if(ranking)ranking.innerHTML=(d.atmCases||[]).length?d.atmCases.map(a=>`<div class="at-rank-row"><b>${safe(a.atm)}</b><span>${fmt(a.open)} terbuka</span><small>${fmt(a.total)} kasus</small></div>`).join(''):'<span class="text-muted small">Belum ada kasus.</span>';
+            host.dataset.loaded='1'; host.classList.remove('is-loading');
+        }catch(e){host.classList.remove('is-loading');const meta=document.getElementById('atMeta');if(meta)meta.textContent='Ringkasan gagal dimuat: '+(e.message||'periksa koneksi');console.error('All-time summary:',e);}
+    }
+    async function search(direction=1, next=false){
+        const q=document.getElementById('atQuery')?.value||'';const type=document.getElementById('atType')?.value||'GL';
+        if(next)page=Math.min(totalPages,page+1);else if(direction<0)page=Math.max(1,page-1);else page=1;
+        lastQuery=q;lastType=type;
+        const host=document.getElementById('atResults');if(!host)return;host.innerHTML='<span class="text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Mencari seluruh histori…</span>';
+        try{
+            const r=await apiCall('getPagedData',{type,page,pageSize:25,query:q},'000000');const d=r.data||{};totalPages=d.totalPages||0;
+            host.innerHTML=(d.rows||[]).length?`<div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead><tr><th>Periode</th><th>Tanggal</th><th>ATM</th><th>Resi</th><th>Nominal</th><th>Detail</th></tr></thead><tbody>${d.rows.map(x=>{const a=x.row||[];const ix=type==='SELISIH'?{atm:1,resi:2,nom:3,detail:4}: {atm:2,resi:3,nom:4,detail:5};return `<tr><td>${safe(x.period)}</td><td>${safe(x.date)}</td><td>${safe(a[ix.atm])}</td><td>${safe(a[ix.resi])}</td><td>${safe(fmt(a[ix.nom]))}</td><td>${safe(a[ix.detail])}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="text-muted small py-3">Tidak ada data yang cocok.</div>';
+            document.getElementById('atPageInfo').textContent=`${fmt(d.total)} data · halaman ${d.total?d.page:0} dari ${fmt(d.totalPages)}`;
+            document.getElementById('atPrev').disabled=page<=1;document.getElementById('atNext').disabled=!d.hasMore;
+        }catch(e){host.textContent='Pencarian gagal: '+(e.message||'periksa koneksi');}
+    }
+    function init(){refresh();const q=document.getElementById('atQuery');q?.addEventListener('keydown',e=>{if(e.key==='Enter')search(1);});q?.addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{if(q.value.trim().length>=2||q.value.trim()==='')search(1);},450);});document.getElementById('atType')?.addEventListener('change',()=>search(1));}
+    return {refresh,search,init};
+})();
+document.addEventListener('DOMContentLoaded',()=>window.atm129AllTime?.init(),{once:true});
+
 // Penguatan UX global: cegah submit ganda dan berikan fallback error yang konsisten.
 window.__atm129Busy = window.__atm129Busy || new Set();
 window.atm129RunOnce = async function(key, operation) {
